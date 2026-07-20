@@ -1,0 +1,37 @@
+...PatternGenerator.createFourWayStorm(0, 3000, 20),
+    (始まる時間、終わる時間、弾幕の個数)　上下左右からランダムに球が飛んでくる
+    ＊また、時間はすべてミリ秒
+
+...PatternGenerator.createCenterLineDown(
+    5000, window.innerWidth / 2, 18, 'down', 100),
+    (始まりの時間、中心座標、弾幕個数、飛ぶ向き、弾幕の間隔)
+    弾幕が一列になって飛んでくる
+
+...PatternGenerator.createCircleSpread(10000, 400, 300, 24, 1, 0),
+    (始まりの時間、中心のx座標、中心のy座標、弾幕の個数、弾幕の速度、初期角度)
+    中心の座標から弾幕が円形になって飛んでくる
+    window.innerWidth   ⇒  画面の横幅
+    window.innerHeight  ⇒  画面の縦幅
+    Math.PI / 4         ⇒  45度
+
+...PatternGenerator.createSpiralSpread(1000, 638, 0, 200,
+    31, 0.157, 1, 0)
+    (始まりの時間、中心のx座標、中心のy座標、弾幕の個数、
+    弾幕発射の間隔、弾幕を一回発射するごとの回転(ラジアン)、弾幕の速度、初期角度)
+    弾幕がらせん状に飛んでくる
+
+...PatternGenerator.createRandomStormVariable(1000, 20000, 80, 250, 6),    
+    (始まりの時間、終わりの時間、弾幕間隔の最小値、弾幕間隔の最大値、弾幕の速度)
+    弾幕がランダムに上下左右から降ってきて、間隔を設定できる
+
+...PatternGenerator.createHomingStormVariable(10000, 20000, 200, 400,
+    2.5, 0.03),
+    (始まりの時間、終わりの時間、弾幕間隔の最小値、弾幕間隔の最大値、
+    弾幕の速度、ホーミングの強さ)
+    一つ上のやつの弾幕がホーミングするようになったやつ
+
+...PatternGenerator.createWaveStormVariable(26000, 36000, 80, 200, 
+    4, 80, 0.01),
+    (始まりの時間、終わりの時間、弾幕間隔の最小値、弾幕間隔の最大値、
+    弾幕の速度、振幅、振動数)
+    二つ上のやつの弾幕がウェーブするようになったやつ
