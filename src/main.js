@@ -271,6 +271,7 @@ class SelectScene extends Phaser.Scene {
     }
 
     // 🌟 再生開始確認画面（オーバーレイ）を表示するメソッド
+// 🌟 再生開始確認画面（PC・スマホ両対応版）
     showPlayOverlay(song) {
         const screenWidth = this.cameras.main.width;
         const screenHeight = this.cameras.main.height;
@@ -304,9 +305,15 @@ class SelectScene extends Phaser.Scene {
         playBtn.on('pointerover', () => playBtn.setStyle({ fill: '#ffff00', backgroundColor: '#334155' }));
         playBtn.on('pointerout', () => playBtn.setStyle({ fill: '#00ffff', backgroundColor: '#1e293b' }));
 
+        // 🌟 ボタンを押した時の安全な再生処理
         playBtn.on('pointerdown', () => {
-            if (!this.scale.isFullscreen) {
-                this.scale.startFullscreen();
+            // フルスクリーン化（エラーを防ぐため try-catch）
+            try {
+                if (!this.scale.isFullscreen) {
+                    this.scale.startFullscreen();
+                }
+            } catch (e) {
+                console.log("フルスクリーン移行エラー(無視してOK):", e);
             }
 
             const playerElement = document.getElementById('youtube-player');
@@ -314,11 +321,13 @@ class SelectScene extends Phaser.Scene {
                 playerElement.style.display = 'block';
             }
 
-            if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-                ytPlayer.loadVideoById(song.youtubeId);
-                ytPlayer.playVideo();
+            // 💡 PCでのタイミングズレ対策：プレイヤーが存在し、かつメソッドが使えるか厳重チェック
+            if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
+                window.ytPlayer.loadVideoById(song.youtubeId);
+                window.ytPlayer.playVideo();
             }
 
+            // ゲームシーンを開始（※動画の初期化はGameScene側でも自動補正されます）
             this.scene.start('GameScene');
         });
 
