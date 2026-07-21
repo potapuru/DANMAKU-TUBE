@@ -254,7 +254,7 @@ class SelectScene extends Phaser.Scene {
                 });
             });
 
-            // クリック時
+// クリック時
             cardContainer.on('pointerdown', () => {
                 this.tweens.add({
                     targets: cardContainer,
@@ -265,15 +265,19 @@ class SelectScene extends Phaser.Scene {
                     onComplete: () => {
                         if (!this.scale.isFullscreen) {
                             this.scale.startFullscreen();
-                            }
+                        }
                         currentSong = song;
                         const playerElement = document.getElementById('youtube-player');
                         if (playerElement) {
                             playerElement.style.display = 'block';
                         }
+                        
+                        // 🌟 明示的に動画を読み込んで再生を実行！
                         if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
                             ytPlayer.loadVideoById(song.youtubeId);
+                            ytPlayer.playVideo();
                         }
+                        
                         this.scene.start('GameScene');
                     }
                 });
@@ -429,7 +433,7 @@ class GameScene extends Phaser.Scene {
         hpBarGraphics = this.add.graphics();
         this.drawHpBar();
 
-      if (window.YT && window.YT.Player && currentSong) {
+if (window.YT && window.YT.Player && currentSong) {
             const onPlayerStateChange = (event) => {
                 if (event.data === window.YT.PlayerState.PLAYING) {
                     // 💡 【字幕絶対殺す対策】動画が再生された瞬間に、YouTubeの字幕モジュールを強制解除する
@@ -454,34 +458,30 @@ class GameScene extends Phaser.Scene {
                 }
             };
 
-            // 💡 loadVideoById で曲を切り替えるときも、字幕オフのオプションを強制適用する
+            // 💡 共通の playerVars（origin を必ず追加！）
+            const playerVarsConfig = {
+                'autoplay': 1,
+                'controls': 0,
+                'disablekb': 1,
+                'rel': 0,
+                'modestbranding': 1,
+                'cc_load_policy': 0, // 字幕オフ
+                'iv_load_policy': 3,  // ポップアップオフ
+                'origin': window.location.origin // 👈 🌟 【超重要】これがないとネット公開時にブロックされます！
+            };
+
             if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
                 ytPlayer.addEventListener('onStateChange', onPlayerStateChange);
                 ytPlayer.loadVideoById({
                     videoId: currentSong.youtubeId,
-                    playerVars: {
-                        'autoplay': 1,
-                        'controls': 0,
-                        'disablekb': 1,
-                        'rel': 0,
-                        'modestbranding': 1,
-                        'cc_load_policy': 0, // 字幕オフ
-                        'iv_load_policy': 3  // ポップアップオフ
-                    }
+                    playerVars: playerVarsConfig
                 });
+                ytPlayer.playVideo(); // 👈 🌟 再生命令を確実に発行
             } else {
-                // 初めてプレイヤーを作る時も完璧に設定を適用
+                // 初めてプレイヤーを作る時
                 window.ytPlayer = new window.YT.Player('youtube-player', {
                     videoId: currentSong.youtubeId,
-                    playerVars: {
-                        'autoplay': 1,
-                        'controls': 0,
-                        'disablekb': 1,
-                        'rel': 0,
-                        'modestbranding': 1,
-                        'cc_load_policy': 0, // 字幕オフ
-                        'iv_load_policy': 3  // ポップアップオフ
-                    },
+                    playerVars: playerVarsConfig,
                     events: {
                         'onStateChange': onPlayerStateChange
                     }
