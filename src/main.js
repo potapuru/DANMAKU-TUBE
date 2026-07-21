@@ -15,7 +15,7 @@ let hitCount = 0;
 let ytPlayer = null;
 let currentSong = null; 
 export let operationMode = 'mouse';
-export let playerSpeed = 8; // 🌟 プレイヤーの移動速度（初期値: 8）
+export let playerSpeed = 20; // プレイヤーの移動速度
 
 // 💡 動画時間を取得するための関数
 export function getYoutubeCurrentTimeMS() {
@@ -50,7 +50,7 @@ class HomeScene extends Phaser.Scene {
         const centerX = screenWidth / 2;
         const centerY = this.cameras.main.height / 2;
 
-        // ⚙️ 設定画面ボタン（ホーム画面）
+        // ⚙️ 設定画面ボタン
         const settingButton = this.add.text(screenWidth - 170, 40, '⚙️ SETTINGS', {
             fontSize: '20px',
             fontFamily: 'Arial',
@@ -80,7 +80,7 @@ class HomeScene extends Phaser.Scene {
             padding: { x: 20, y: 10 }
         }).setOrigin(0.5);
 
-        startButton.setInteractive();
+        startButton.setInteractive({ useHandCursor: true });
         startButton.on('pointerover', () => startButton.setStyle({ fill: '#ffff00' }));
         startButton.on('pointerout', () => startButton.setStyle({ fill: '#00ffff' }));
         startButton.on('pointerdown', () => {
@@ -137,7 +137,7 @@ class SelectScene extends Phaser.Scene {
             fill: '#00ffff'
         }).setOrigin(0.5);
 
-        // 配置
+        // 配置計算
         const columns = 4;
         const cardWidth = 240;
         const cardHeight = 190;
@@ -159,7 +159,7 @@ class SelectScene extends Phaser.Scene {
         const mask = maskShape.createGeometryMask();
         scrollContainer.setMask(mask);
 
-        // カード生成
+        // 曲カード作成
         songList.forEach((song, index) => {
             const col = index % columns;             
             const row = Math.floor(index / columns); 
@@ -236,18 +236,10 @@ class SelectScene extends Phaser.Scene {
                 });
             });
 
+            // 🌟 曲カードをクリックしたら直接ゲーム画面（GameScene）へ移行
             cardContainer.on('pointerdown', () => {
-                this.tweens.add({
-                    targets: cardContainer,
-                    alpha: 0.5,
-                    duration: 50,
-                    yoyo: true,
-                    repeat: 1,
-                    onComplete: () => {
-                        currentSong = song;
-                        this.showPlayOverlay(song);
-                    }
-                });
+                currentSong = song;
+                this.scene.start('GameScene');
             });
         });
 
@@ -268,61 +260,6 @@ class SelectScene extends Phaser.Scene {
                 duration: 200,
                 ease: 'Power2'
             });
-        });
-    }
-
-    // 🌟 モーダル（クリックイベント受け取り用）
-    showPlayOverlay(song) {
-        const screenWidth = this.cameras.main.width;
-        const screenHeight = this.cameras.main.height;
-        const centerX = screenWidth / 2;
-        const centerY = screenHeight / 2;
-
-        const overlay = this.add.rectangle(centerX, centerY, screenWidth, screenHeight, 0x000000, 0.85);
-        overlay.setInteractive();
-
-        const titleText = this.add.text(centerX, centerY - 60, `🎵 ${song.title}`, {
-            fontSize: '28px',
-            fontFamily: 'Arial',
-            fontWeight: 'bold',
-            fill: '#ffffff'
-        }).setOrigin(0.5);
-
-        const playBtn = this.add.text(centerX, centerY + 30, '▶ GAME START (再生)', {
-            fontSize: '32px',
-            fontFamily: 'Arial',
-            fontWeight: 'bold',
-            fill: '#00ffff',
-            backgroundColor: '#1e293b',
-            padding: { x: 30, y: 15 }
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-        const cancelBtn = this.add.text(centerX, centerY + 110, 'キャンセル', {
-            fontSize: '18px',
-            fill: '#94a3b8'
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-        playBtn.on('pointerover', () => playBtn.setStyle({ fill: '#ffff00', backgroundColor: '#334155' }));
-        playBtn.on('pointerout', () => playBtn.setStyle({ fill: '#00ffff', backgroundColor: '#1e293b' }));
-
-        playBtn.on('pointerdown', () => {
-            try {
-                if (!this.scale.isFullscreen) {
-                    this.scale.startFullscreen();
-                }
-            } catch (e) {
-                console.log("フルスクリーンエラー(無視):", e);
-            }
-
-            // 💡 ここでは動画の読み込みを行わず、GameSceneに一任して衝突を防ぐ
-            this.scene.start('GameScene');
-        });
-
-        cancelBtn.on('pointerdown', () => {
-            overlay.destroy();
-            titleText.destroy();
-            playBtn.destroy();
-            cancelBtn.destroy();
         });
     }
 }
@@ -361,7 +298,7 @@ class SettingScene extends Phaser.Scene {
             fill: '#00ffff'
         }).setOrigin(0.5);
 
-        // 操作方法
+        // 操作方法の設定
         this.add.text(centerX, 130, '■ 操作方法の選択', {
             fontSize: '20px',
             fontFamily: 'Arial',
@@ -397,7 +334,7 @@ class SettingScene extends Phaser.Scene {
             mouseBtn.setStyle({ fill: '#00ffff', backgroundColor: '#1e293b' });
         });
 
-        // プレイヤー移動スピード
+        // プレイヤー移動スピード設定
         this.add.text(centerX, 280, '■ プレイヤーの移動スピード', {
             fontSize: '20px',
             fontFamily: 'Arial',
@@ -438,7 +375,7 @@ class SettingScene extends Phaser.Scene {
         });
 
         plusBtn.on('pointerdown', () => {
-            if (playerSpeed < 20) {
+            if (playerSpeed < 40) {
                 playerSpeed += 1;
                 speedText.setText(`${playerSpeed}`);
             }
@@ -447,7 +384,7 @@ class SettingScene extends Phaser.Scene {
 }
 
 // ==========================================
-// 🎮 3. ゲーム本編のシーン
+// 🎮 3. ゲーム本編のシーン（MV背景＆再生待機）
 // ==========================================
 class GameScene extends Phaser.Scene {
     constructor() {
@@ -458,6 +395,7 @@ class GameScene extends Phaser.Scene {
         playerHp = maxHp;
         isGameOver = false;
         hitCount = 0;
+        this.isGameStarted = false; // ゲーム＆動画開始フラグ
 
         const playerElement = document.getElementById('youtube-player');
         if (playerElement) {
@@ -488,7 +426,7 @@ class GameScene extends Phaser.Scene {
         hpBarGraphics = this.add.graphics();
         this.drawHpBar();
 
-        // 🌟 PC・スマホ完全対応版 YouTube プレイヤー制御
+        // 🌟 YouTube プレイヤー準備（動画ロード）
         if (currentSong) {
             const currentOrigin = window.location.origin || (window.location.protocol + '//' + window.location.host);
 
@@ -514,7 +452,7 @@ class GameScene extends Phaser.Scene {
             };
 
             const playerVarsConfig = {
-                'autoplay': 1,
+                'autoplay': 0, // クリックで開始するため自動再生はOFF
                 'controls': 0,
                 'disablekb': 1,
                 'rel': 0,
@@ -525,41 +463,76 @@ class GameScene extends Phaser.Scene {
                 'origin': currentOrigin
             };
 
-            // 安全に再生処理を呼び出す
-            const startVideoPlayback = () => {
-                try {
-                    if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-                        ytPlayer.loadVideoById({
-                            videoId: currentSong.youtubeId,
-                            playerVars: playerVarsConfig
-                        });
-                        ytPlayer.playVideo();
-                    } else if (window.YT && window.YT.Player) {
-                        window.ytPlayer = new window.YT.Player('youtube-player', {
-                            videoId: currentSong.youtubeId,
-                            host: 'https://www.youtube-nocookie.com',
-                            playerVars: playerVarsConfig,
-                            events: {
-                                'onReady': (e) => e.target.playVideo(),
-                                'onStateChange': onPlayerStateChange
-                            }
-                        });
-                        ytPlayer = window.ytPlayer;
+            if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+                ytPlayer.loadVideoById({
+                    videoId: currentSong.youtubeId,
+                    playerVars: playerVarsConfig
+                });
+            } else if (window.YT && window.YT.Player) {
+                window.ytPlayer = new window.YT.Player('youtube-player', {
+                    videoId: currentSong.youtubeId,
+                    host: 'https://www.youtube-nocookie.com',
+                    playerVars: playerVarsConfig,
+                    events: {
+                        'onStateChange': onPlayerStateChange
                     }
-                } catch(err) {
-                    console.log("YouTube再生実行エラー:", err);
-                }
-            };
-
-            // 100msだけ遅延させて画面生成と動画読み込みのタイマー衝突を回避
-            this.time.delayedCall(100, startVideoPlayback);
+                });
+                ytPlayer = window.ytPlayer;
+            }
         }
+
+        // 🌟 画面中央に「再生＆スタート」オーバーレイを表示
+        this.createStartOverlay(centerX, centerY);
 
         this.scale.on('resize', (gameSize) => {
             const width = gameSize.width;
             const height = gameSize.height;
             this.cameras.main.setViewport(0, 0, width, height);
             this.drawHpBar();
+        });
+    }
+
+    // 🌟 動画再生＆スタートボタンの作成
+    createStartOverlay(centerX, centerY) {
+        const overlayBg = this.add.rectangle(centerX, centerY, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.65);
+        
+        const titleText = this.add.text(centerX, centerY - 60, `🎵 ${currentSong ? currentSong.title : 'Ready'}`, {
+            fontSize: '28px',
+            fontFamily: 'Arial',
+            fontWeight: 'bold',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+
+        const startBtn = this.add.text(centerX, centerY + 20, '▶ 画面を押して再生＆スタート', {
+            fontSize: '32px',
+            fontFamily: 'Arial',
+            fontWeight: 'bold',
+            fill: '#00ffff',
+            backgroundColor: '#1e293b',
+            padding: { x: 30, y: 15 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        startBtn.on('pointerover', () => startBtn.setStyle({ fill: '#ffff00', backgroundColor: '#334155' }));
+        startBtn.on('pointerout', () => startBtn.setStyle({ fill: '#00ffff', backgroundColor: '#1e293b' }));
+
+        // 💡 ユーザーの直接クリックイベント内で playVideo() を呼ぶことでPCの規制を突破！
+        startBtn.on('pointerdown', () => {
+            try {
+                if (!this.scale.isFullscreen) {
+                    this.scale.startFullscreen();
+                }
+            } catch (e) {}
+
+            // YouTube動画再生処理
+            if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+                ytPlayer.playVideo();
+            }
+
+            // オーバーレイの削除とゲーム開始
+            overlayBg.destroy();
+            titleText.destroy();
+            startBtn.destroy();
+            this.isGameStarted = true;
         });
     }
 
@@ -604,7 +577,7 @@ class GameScene extends Phaser.Scene {
             padding: { x: 15, y: 8 }
         }).setOrigin(0.5);
 
-        homeButton.setInteractive();
+        homeButton.setInteractive({ useHandCursor: true });
         homeButton.on('pointerover', () => homeButton.setStyle({ fill: '#ffaa00' }));
         homeButton.on('pointerout', () => homeButton.setStyle({ fill: '#fff' }));
         homeButton.on('pointerdown', () => {
@@ -613,7 +586,8 @@ class GameScene extends Phaser.Scene {
     }
 
     update() {
-        if (isGameOver) return;
+        // 再生ボタンを押すまでは更新処理をストップ
+        if (!this.isGameStarted || isGameOver) return;
 
         const screenWidth = this.cameras.main.width;
         const screenHeight = this.cameras.main.height;
@@ -627,7 +601,7 @@ class GameScene extends Phaser.Scene {
             if (keys.up.isDown) { player.y -= playerSpeed; } 
             else if (keys.down.isDown) { player.y += playerSpeed; }
         } 
-        // マウス / タッチ追従（ワープ防止）
+        // マウス / タッチ追従
         else if (operationMode === 'mouse') {
             const pointer = this.input.activePointer;
 
@@ -729,7 +703,7 @@ class ResultScene extends Phaser.Scene {
             padding: { x: 20, y: 10 }
         }).setOrigin(0.5);
 
-        homeButton.setInteractive();
+        homeButton.setInteractive({ useHandCursor: true });
         homeButton.on('pointerover', () => homeButton.setStyle({ fill: '#ffff00', backgroundColor: '#444' }));
         homeButton.on('pointerout', () => homeButton.setStyle({ fill: '#00ffff', backgroundColor: '#222' }));
         homeButton.on('pointerdown', () => {
