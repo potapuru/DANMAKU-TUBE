@@ -489,6 +489,17 @@ class GameScene extends Phaser.Scene {
                 ytPlayer = window.ytPlayer;
             }
         }
+        // 📱 スマホの画面回転（縦横切替）やウィンドウリサイズ時に自動追従する処理
+        this.scale.on('resize', (gameSize) => {
+            const width = gameSize.width;
+            const height = gameSize.height;
+
+            // カメラの表示範囲を更新
+            this.cameras.main.setViewport(0, 0, width, height);
+            
+            // HPバーなどのUIを新しい画面サイズに描画し直す
+            this.drawHpBar();
+        });
     }
 
     drawHpBar() {
@@ -666,14 +677,19 @@ class ResultScene extends Phaser.Scene {
 // ==========================================
 // ⚙️ 5. 全体の設定
 // ==========================================
+// ==========================================
+// ⚙️ 5. 全体の設定（スマホ・レスポンシブ対応版）
+// ==========================================
 const config = {
     type: Phaser.AUTO,
-    width: window.innerWidth,
-    height: window.innerHeight,
+    // 💡 基準となる解像度（16:9 の横長画面を基準に設定）
+    width: 1280,
+    height: 720,
     transparent: true, 
     parent: 'game-container',  
     scale: {
-        mode: Phaser.Scale.RESIZE,           
+        // 💡 FIT: 画面の比率（16:9）を維持したまま、縦横どちらの画面にもピッタリ収まるように拡大縮小する
+        mode: Phaser.Scale.FIT,           
         autoCenter: Phaser.Scale.CENTER_BOTH,
         fullscreenTarget: 'game-container'
     },
