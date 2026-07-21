@@ -660,13 +660,28 @@ update() {
             else if (keys.down.isDown) { player.y += 8; }
         } 
         // 🖱️ 操作モードが「マウス」の場合の処理
+// 🖱️ 操作モードが「マウス / タッチ」の場合の処理
         else if (operationMode === 'mouse') {
-            // 画面上の現在のマウス位置（ポインター）を取得
             const pointer = this.input.activePointer;
 
-            // 自機（player）の位置をマウスの座標にぴったり追従
-            player.x = pointer.x;
-            player.y = pointer.y;
+            // 💡 画面をタッチしている時（またはマウスを押している/動かしている時）だけ移動
+            if (pointer.isDown || pointer.wasTouch) {
+                // 自機とタッチ位置の距離・角度を計算
+                const distance = Phaser.Math.Distance.Between(player.x, player.y, pointer.x, pointer.y);
+
+                // 🌟 移動スピードの上限（例: 1フレームあたり最大 8px 移動）
+                // この数値を小さく（例: 5）すると激ムズ、大きく（例: 12）すると素早くなります！
+                const maxSpeed = 8; 
+
+                if (distance > 5) { // タッチ位置と重なりすぎてガタガタ動くのを防ぐ判定
+                    const angle = Phaser.Math.Angle.Between(player.x, player.y, pointer.x, pointer.y);
+                    
+                    // ワープさせず、指定スピード分だけ滑らかに移動させる
+                    const moveDistance = Math.min(distance, maxSpeed);
+                    player.x += Math.cos(angle) * moveDistance;
+                    player.y += Math.sin(angle) * moveDistance;
+                }
+            }
         }
 
         // 💡 左右と上下で制限の強さを変えたい場合の例
