@@ -25,8 +25,40 @@ export function getYoutubeCurrentTimeMS() {
     return 0;
 }
 
+// 🌟 ネオン系背景粒子を生成する共通ヘルパー関数
+function createCyberBackground(scene, width, height, count = 70) {
+    const colors = [0x00ffff, 0xff00ff, 0xffff00, 0x3b82f6];
+
+    for (let i = 0; i < count; i++) {
+        const x = Phaser.Math.Between(0, width);
+        const y = Phaser.Math.Between(0, height);
+        const size = Phaser.Math.Between(3, 8);
+        const color = Phaser.Utils.Array.GetRandom(colors);
+        const alpha = Phaser.Math.FloatBetween(0.2, 0.7);
+
+        const particle = scene.add.circle(x, y, size, color, alpha);
+
+        // ゆっくり上にのぼりながら消滅・ループするアニメーション
+        scene.tweens.add({
+            targets: particle,
+            y: y - Phaser.Math.Between(150, 400),
+            x: x + Phaser.Math.Between(-50, 50),
+            alpha: 0,
+            duration: Phaser.Math.Between(3000, 7000),
+            ease: 'Sine.easeOut',
+            repeat: -1,
+            repeatDelay: Phaser.Math.Between(100, 1500),
+            onRepeat: (tween, target) => {
+                target.x = Phaser.Math.Between(0, width);
+                target.y = height + 20;
+                target.alpha = Phaser.Math.FloatBetween(0.2, 0.7);
+            }
+        });
+    }
+}
+
 // ==========================================
-// 🏠 1. ホーム画面のシーン（Phase 1 強化版！）
+// 🏠 1. ホーム画面のシーン
 // ==========================================
 class HomeScene extends Phaser.Scene {
     constructor() {
@@ -51,8 +83,8 @@ class HomeScene extends Phaser.Scene {
         const centerX = screenWidth / 2;
         const centerY = screenHeight / 2;
 
-        // 🌟 【Phase 1】ネオンパーティクル背景の生成
-        this.createCyberBackground(screenWidth, screenHeight);
+        // 🌟 ネオンパーティクル背景（数: 45個）
+        createCyberBackground(this, screenWidth, screenHeight, 45);
 
         // ⚙️ 設定画面ボタン
         const settingButton = this.add.text(screenWidth - 170, 40, '⚙️ SETTINGS', {
@@ -70,7 +102,7 @@ class HomeScene extends Phaser.Scene {
             this.scene.start('SettingScene');
         });
 
-        // 🌟 【Phase 1】タイトルロゴの作成＆浮遊（yoyo）アニメーション
+        // タイトルロゴ
         const titleText = this.add.text(centerX, centerY - 100, 'Danmaku Tube', { 
             fontSize: '56px', 
             fontFamily: 'Impact, Arial Black, sans-serif',
@@ -80,7 +112,6 @@ class HomeScene extends Phaser.Scene {
             shadow: { offsetX: 3, offsetY: 3, color: '#000000', blur: 5, fill: true }
         }).setOrigin(0.5).setPadding(10); 
 
-        // タイトルが上下にふわふわ揺れるアニメーション
         this.tweens.add({
             targets: titleText,
             y: centerY - 115,
@@ -90,7 +121,7 @@ class HomeScene extends Phaser.Scene {
             repeat: -1
         });
 
-        // 🌟 【Phase 1】スタートボタンの作成＆脈動（パルス）アニメーション
+        // スタートボタン
         const startButton = this.add.text(centerX, centerY + 60, '👉 ゲームスタート 👈', { 
             fontSize: '32px', 
             fontFamily: 'Arial',
@@ -100,7 +131,6 @@ class HomeScene extends Phaser.Scene {
             padding: { x: 25, y: 12 }
         }).setOrigin(0.5);
 
-        // ボタンの枠線装飾
         const btnBorder = this.add.graphics();
         const updateBtnBorder = () => {
             btnBorder.clear();
@@ -110,7 +140,6 @@ class HomeScene extends Phaser.Scene {
         };
         updateBtnBorder();
 
-        // ボタンが鼓動のように拡大縮小（パルス）するアニメーション
         this.tweens.add({
             targets: startButton,
             scaleX: 1.08,
@@ -130,42 +159,10 @@ class HomeScene extends Phaser.Scene {
             this.scene.start('SelectScene');
         });
     }
-
-    // 🌟 【Phase 1】ネオン系背景粒子の生成関数
-    createCyberBackground(width, height) {
-        const colors = [0x00ffff, 0xff00ff, 0xffff00, 0x3b82f6];
-
-        for (let i = 0; i < 45; i++) {
-            const x = Phaser.Math.Between(0, width);
-            const y = Phaser.Math.Between(0, height);
-            const size = Phaser.Math.Between(3, 8);
-            const color = Phaser.Utils.Array.GetRandom(colors);
-            const alpha = Phaser.Math.FloatBetween(0.2, 0.7);
-
-            const particle = this.add.circle(x, y, size, color, alpha);
-
-            // ゆっくり上にのぼりながら消滅・ループするアニメーション
-            this.tweens.add({
-                targets: particle,
-                y: y - Phaser.Math.Between(150, 400),
-                x: x + Phaser.Math.Between(-50, 50),
-                alpha: 0,
-                duration: Phaser.Math.Between(3000, 7000),
-                ease: 'Sine.easeOut',
-                repeat: -1,
-                repeatDelay: Phaser.Math.Between(100, 1500),
-                onRepeat: (tween, target) => {
-                    target.x = Phaser.Math.Between(0, width);
-                    target.y = height + 20;
-                    target.alpha = Phaser.Math.FloatBetween(0.2, 0.7);
-                }
-            });
-        }
-    }
 }
 
 // ==========================================
-// 🎵 2. 曲選択画面のシーン
+// 🎵 2. 曲選択画面のシーン（パーティクル背景追加！）
 // ==========================================
 class SelectScene extends Phaser.Scene {
     constructor() {
@@ -187,6 +184,10 @@ class SelectScene extends Phaser.Scene {
         const screenWidth = this.cameras.main.width;
         const screenHeight = this.cameras.main.height;
         const centerX = screenWidth / 2;
+
+        // 🌟 曲選択画面にもネオンパーティクルを追加！
+        // 💡 45 の数字を変えることでパーティクルの量を調整できます
+        createCyberBackground(this, screenWidth, screenHeight, 45);
 
         // 🔙 戻るボタン
         const backButton = this.add.text(50, 40, '← BACK', {
@@ -246,7 +247,7 @@ class SelectScene extends Phaser.Scene {
             scrollContainer.add(cardContainer);
 
             const bgGlow = this.add.graphics();
-            bgGlow.fillStyle(0x1e293b, 1);
+            bgGlow.fillStyle(0x0f172a, 0.85); // パーティクルが見やすいよう半透明ダーク背景
             bgGlow.lineStyle(2, 0x334155, 1);
             bgGlow.strokeRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
             bgGlow.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
@@ -281,7 +282,7 @@ class SelectScene extends Phaser.Scene {
 
             cardContainer.on('pointerover', () => {
                 bgGlow.clear();
-                bgGlow.fillStyle(0x1e293b, 1);
+                bgGlow.fillStyle(0x1e293b, 0.95);
                 bgGlow.lineStyle(3, 0x00ffff, 1);
                 bgGlow.strokeRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
                 bgGlow.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
@@ -297,7 +298,7 @@ class SelectScene extends Phaser.Scene {
 
             cardContainer.on('pointerout', () => {
                 bgGlow.clear();
-                bgGlow.fillStyle(0x1e293b, 1);
+                bgGlow.fillStyle(0x0f172a, 0.85);
                 bgGlow.lineStyle(2, 0x334155, 1);
                 bgGlow.strokeRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
                 bgGlow.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
@@ -348,7 +349,10 @@ class SettingScene extends Phaser.Scene {
 
     create() {
         const screenWidth = this.cameras.main.width;
+        const screenHeight = this.cameras.main.height;
         const centerX = screenWidth / 2;
+
+        createCyberBackground(this, screenWidth, screenHeight, 30);
 
         const backButton = this.add.text(50, 40, '← BACK', {
             fontSize: '20px',
@@ -740,8 +744,12 @@ class ResultScene extends Phaser.Scene {
     }
 
     create() {
-        const centerX = this.cameras.main.width / 2;
-        const centerY = this.cameras.main.height / 2;
+        const screenWidth = this.cameras.main.width;
+        const screenHeight = this.cameras.main.height;
+        const centerX = screenWidth / 2;
+        const centerY = screenHeight / 2;
+
+        createCyberBackground(this, screenWidth, screenHeight, 30);
 
         const score = Math.floor((playerHp / maxHp) * 100);
 
