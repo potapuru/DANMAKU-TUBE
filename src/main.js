@@ -70,7 +70,6 @@ class HomeScene extends Phaser.Scene {
         });
     }
 }
-
 // ==========================================
 // 🎵 2. 曲選択画面のシーン
 // ==========================================
@@ -80,10 +79,8 @@ class SelectScene extends Phaser.Scene {
     }
 
     preload() {
-        // 💡 外部のYouTubeサムネイル画像をロードする設定
         this.load.crossOrigin = 'anonymous';
 
-        // 💡 楽曲リストをループして、全曲のサムネイル画像を自動的に読み込む
         songList.forEach(song => {
             if (song.youtubeId) {
                 const thumbUrl = `https://img.youtube.com/vi/${song.youtubeId}/mqdefault.jpg`;
@@ -97,9 +94,7 @@ class SelectScene extends Phaser.Scene {
         const screenHeight = this.cameras.main.height;
         const centerX = screenWidth / 2;
 
-        // ------------------------------------------
-        // ⚙️ 設定画面（SETTINGS）に移動するボタン
-        // ------------------------------------------
+        // ⚙️ 設定画面ボタン
         const settingButton = this.add.text(screenWidth - 170, 40, '⚙️ SETTINGS', {
             fontSize: '20px',
             fontFamily: 'Arial',
@@ -112,12 +107,10 @@ class SelectScene extends Phaser.Scene {
         settingButton.on('pointerover', () => settingButton.setStyle({ fill: '#00ffff', backgroundColor: '#334155' }));
         settingButton.on('pointerout', () => settingButton.setStyle({ fill: '#ffffff', backgroundColor: '#1e293b' }));
         settingButton.on('pointerdown', () => {
-            this.scene.start('SettingScene'); // 設定画面シーンへ移動
+            this.scene.start('SettingScene');
         });
 
-        // ------------------------------------------
-        // 🔙 前の画面（ホーム）に戻るボタンの追加
-        // ------------------------------------------
+        // 🔙 前の画面（ホーム）に戻るボタン
         const backButton = this.add.text(50, 40, '← BACK', {
             fontSize: '20px',
             fontFamily: 'Arial',
@@ -127,14 +120,13 @@ class SelectScene extends Phaser.Scene {
             padding: { x: 15, y: 8 }
         }).setInteractive({ useHandCursor: true });
 
-        // 枠線をつけるための簡易的なグラフィックス（お好みで）
         backButton.on('pointerover', () => backButton.setStyle({ fill: '#ffff00', backgroundColor: '#334155' }));
         backButton.on('pointerout', () => backButton.setStyle({ fill: '#00ffff', backgroundColor: '#1e293b' }));
         backButton.on('pointerdown', () => {
             this.scene.start('HomeScene');
         });
 
-        // タイトル表示
+        // タイトル
         this.add.text(centerX, 60, 'SELECT MUSIC', {
             fontSize: '38px',
             fontFamily: 'Arial',
@@ -142,35 +134,29 @@ class SelectScene extends Phaser.Scene {
             fill: '#00ffff'
         }).setOrigin(0.5);
 
-        // ------------------------------------------
-        // 📏 スクロールと配置用パラメータ設定 (サイズを少し小さく変更)
-        // ------------------------------------------
-        const columns = 4;        // 1行に並べるカードの数
-        const cardWidth = 240;    // 💡 320 から 240 に縮小
-        const cardHeight = 190;   // 💡 240 から 190 に縮小
-        const gapX = 25;          // カード同士の横の隙間
-        const gapY = 30;          // カード同士の縦の隙間
+        // 配置パラメータ
+        const columns = 4;
+        const cardWidth = 240;
+        const cardHeight = 190;
+        const gapX = 25;
+        const gapY = 30;
 
-        // スクロール可能な表示領域（マスクをかける範囲）の定義
-        const viewY = 130; // スクロールエリアの上の境界（タイトルの下）
-        const viewHeight = screenHeight - viewY - 40; // 下に40pxほど余白を残す
+        const viewY = 130;
+        const viewHeight = screenHeight - viewY - 40;
 
-        // カード群全体が画面の左右中央にぴったり収まるように、左端の開始座標を自動計算
         const totalGridWidth = (cardWidth * columns) + (gapX * (columns - 1));
         const startX = (screenWidth - totalGridWidth) / 2 + (cardWidth / 2); 
-        const startY = cardHeight / 2 + 10; // コンテナ内での最初の行のY位置
+        const startY = cardHeight / 2 + 10;
 
-        // 💡 すべてのカードを載せる「巨大な一枚の板（メインコンテナ）」を作成
         const scrollContainer = this.add.container(0, viewY);
 
-        // 💡 はみ出た部分を非表示にするための「マスク」を作成して適応
         const maskShape = this.make.graphics();
         maskShape.fillStyle(0xffffff);
         maskShape.fillRect((screenWidth - totalGridWidth) / 2 - 20, viewY, totalGridWidth + 40, viewHeight);
         const mask = maskShape.createGeometryMask();
         scrollContainer.setMask(mask);
 
-        // カードの生成ループ
+        // カード生成
         songList.forEach((song, index) => {
             const col = index % columns;             
             const row = Math.floor(index / columns); 
@@ -178,38 +164,33 @@ class SelectScene extends Phaser.Scene {
             const posX = startX + col * (cardWidth + gapX);
             const posY = startY + row * (cardHeight + gapY);
 
-            // 計算した座標でカード専用のコンテナを作成し、スクロールメインコンテナに追加
             const cardContainer = this.add.container(posX, posY);
             scrollContainer.add(cardContainer);
 
-            // ① カードの背景・枠線
             const bgGlow = this.add.graphics();
             bgGlow.fillStyle(0x1e293b, 1);
             bgGlow.lineStyle(2, 0x334155, 1);
             bgGlow.strokeRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
             bgGlow.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
 
-            // ② YouTubeサムネイル画像 (サイズをカード幅に合わせて縮小)
             let thumbnail;
             if (this.textures.exists(`thumb_${song.youtubeId}`)) {
                 thumbnail = this.add.image(0, -20, `thumb_${song.youtubeId}`);
-                thumbnail.setDisplaySize(220, 124); // 💡 カードに合わせて縮小 (16:9比率維持)
+                thumbnail.setDisplaySize(220, 124);
             } else {
                 thumbnail = this.add.grid(0, -20, 220, 124, 20, 20, 0x000000);
             }
 
-            // ③ 曲名テキスト
             const titleText = this.add.text(0, 55, song.title || 'Unknown Title', {
-                fontSize: '15px', // 💡 少し小さく
+                fontSize: '15px',
                 fontFamily: 'Arial',
                 fontWeight: 'bold',
                 fill: '#ffffff',
                 align: 'center'
             }).setOrigin(0.5);
 
-            // ④ アーティスト名テキスト
             const artistText = this.add.text(0, 75, song.artist || 'Unknown Artist', {
-                fontSize: '12px', // 💡 少し小さく
+                fontSize: '12px',
                 fontFamily: 'Arial',
                 fill: '#94a3b8',
                 align: 'center'
@@ -217,11 +198,9 @@ class SelectScene extends Phaser.Scene {
 
             cardContainer.add([bgGlow, thumbnail, titleText, artistText]);
 
-            // クリック用の判定設定
             cardContainer.setSize(cardWidth, cardHeight);
             cardContainer.setInteractive({ useHandCursor: true });
 
-            // ホバー演出
             cardContainer.on('pointerover', () => {
                 bgGlow.clear();
                 bgGlow.fillStyle(0x1e293b, 1);
@@ -254,7 +233,7 @@ class SelectScene extends Phaser.Scene {
                 });
             });
 
-// クリック時
+            // 🌟 カードクリック時：再生ボタンモーダルを呼ぶ
             cardContainer.on('pointerdown', () => {
                 this.tweens.add({
                     targets: cardContainer,
@@ -263,48 +242,25 @@ class SelectScene extends Phaser.Scene {
                     yoyo: true,
                     repeat: 1,
                     onComplete: () => {
-                        if (!this.scale.isFullscreen) {
-                            this.scale.startFullscreen();
-                        }
                         currentSong = song;
-                        const playerElement = document.getElementById('youtube-player');
-                        if (playerElement) {
-                            playerElement.style.display = 'block';
-                        }
-                        
-                        // 🌟 明示的に動画を読み込んで再生を実行！
-                        if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-                            ytPlayer.loadVideoById(song.youtubeId);
-                            ytPlayer.playVideo();
-                        }
-                        
-                        this.scene.start('GameScene');
+                        this.showPlayOverlay(song);
                     }
                 });
             });
         });
 
-        // ------------------------------------------
-        // 🖱️ スクロール制御ロジックの追加
-        // ------------------------------------------
+        // スクロール制御
         const totalRows = Math.ceil(songList.length / columns);
         const totalContentHeight = startY + (totalRows * (cardHeight + gapY)) - gapY + 20;
-        
-        // 最大スクロールできる限界値を計算（コンテンツが画面内に収まるならスクロールしない）
         const maxScroll = Math.max(0, totalContentHeight - viewHeight);
 
         let currentScrollY = 0;
 
-        // マウスホイールでのスクロールイベント登録
         this.input.on('pointerwheel', (pointer, over, deltaX, deltaY, deltaZ) => {
-            if (maxScroll <= 0) return; // スクロール不要なら何もしない
-
-            // ホイールの回転方向に応じてスクロール量を計算
+            if (maxScroll <= 0) return;
             currentScrollY -= deltaY * 0.5;
-            // 範囲制限 (0 から -maxScroll の間)
             currentScrollY = Phaser.Math.Clamp(currentScrollY, -maxScroll, 0);
 
-            // コンテナのY座標をスムーズに動かす
             this.tweens.add({
                 targets: scrollContainer,
                 y: viewY + currentScrollY,
@@ -313,7 +269,67 @@ class SelectScene extends Phaser.Scene {
             });
         });
     }
-}
+
+    // 🌟 再生開始確認画面（オーバーレイ）を表示するメソッド
+    showPlayOverlay(song) {
+        const screenWidth = this.cameras.main.width;
+        const screenHeight = this.cameras.main.height;
+        const centerX = screenWidth / 2;
+        const centerY = screenHeight / 2;
+
+        const overlay = this.add.rectangle(centerX, centerY, screenWidth, screenHeight, 0x000000, 0.85);
+        overlay.setInteractive();
+
+        const titleText = this.add.text(centerX, centerY - 60, `🎵 ${song.title}`, {
+            fontSize: '28px',
+            fontFamily: 'Arial',
+            fontWeight: 'bold',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+
+        const playBtn = this.add.text(centerX, centerY + 30, '▶ GAME START (再生)', {
+            fontSize: '32px',
+            fontFamily: 'Arial',
+            fontWeight: 'bold',
+            fill: '#00ffff',
+            backgroundColor: '#1e293b',
+            padding: { x: 30, y: 15 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        const cancelBtn = this.add.text(centerX, centerY + 110, 'キャンセル', {
+            fontSize: '18px',
+            fill: '#94a3b8'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        playBtn.on('pointerover', () => playBtn.setStyle({ fill: '#ffff00', backgroundColor: '#334155' }));
+        playBtn.on('pointerout', () => playBtn.setStyle({ fill: '#00ffff', backgroundColor: '#1e293b' }));
+
+        playBtn.on('pointerdown', () => {
+            if (!this.scale.isFullscreen) {
+                this.scale.startFullscreen();
+            }
+
+            const playerElement = document.getElementById('youtube-player');
+            if (playerElement) {
+                playerElement.style.display = 'block';
+            }
+
+            if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+                ytPlayer.loadVideoById(song.youtubeId);
+                ytPlayer.playVideo();
+            }
+
+            this.scene.start('GameScene');
+        });
+
+        cancelBtn.on('pointerdown', () => {
+            overlay.destroy();
+            titleText.destroy();
+            playBtn.destroy();
+            cancelBtn.destroy();
+        });
+    }
+} // 👈 🌟 ここで SelectScene が正しく閉じられます！
 
 // ==========================================
 // ⚙️ 2.5. 設定画面（セッティング）のシーン
@@ -387,6 +403,74 @@ class SettingScene extends Phaser.Scene {
             operationMode = 'mouse'; // グローバル変数を書き換える
             keyboardBtn.setStyle({ fill: '#ffffff', backgroundColor: '#334155' });
             mouseBtn.setStyle({ fill: '#00ffff', backgroundColor: '#1e293b' });
+        });
+    }
+    // 🌟 「再生ボタン」を表示して、クリックイベントで動画再生をキックするメソッド
+    showPlayOverlay(song) {
+        const screenWidth = this.cameras.main.width;
+        const screenHeight = this.cameras.main.height;
+        const centerX = screenWidth / 2;
+        const centerY = screenHeight / 2;
+
+        // 暗い背景（操作の誤爆を防ぐ背景パネル）
+        const overlay = this.add.rectangle(centerX, centerY, screenWidth, screenHeight, 0x000000, 0.85);
+        overlay.setInteractive();
+
+        // 選択した曲タイトルの表示
+        const titleText = this.add.text(centerX, centerY - 60, `🎵 ${song.title}`, {
+            fontSize: '28px',
+            fontFamily: 'Arial',
+            fontWeight: 'bold',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+
+        // 👉 GAME START (再生) ボタン
+        const playBtn = this.add.text(centerX, centerY + 30, '▶ GAME START (再生)', {
+            fontSize: '32px',
+            fontFamily: 'Arial',
+            fontWeight: 'bold',
+            fill: '#00ffff',
+            backgroundColor: '#1e293b',
+            padding: { x: 30, y: 15 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        // キャンセルボタン
+        const cancelBtn = this.add.text(centerX, centerY + 110, 'キャンセル', {
+            fontSize: '18px',
+            fill: '#94a3b8'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        // ボタンのホバー効果
+        playBtn.on('pointerover', () => playBtn.setStyle({ fill: '#ffff00', backgroundColor: '#334155' }));
+        playBtn.on('pointerout', () => playBtn.setStyle({ fill: '#00ffff', backgroundColor: '#1e293b' }));
+
+        // 🌟 プレイヤーがこのボタンを押した瞬間（ブラウザが「ユーザー操作」と認識する重要ポイント！）
+        playBtn.on('pointerdown', () => {
+            if (!this.scale.isFullscreen) {
+                this.scale.startFullscreen();
+            }
+
+            const playerElement = document.getElementById('youtube-player');
+            if (playerElement) {
+                playerElement.style.display = 'block';
+            }
+
+            // クリックの直後に動画読み込み＆再生を実行
+            if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+                ytPlayer.loadVideoById(song.youtubeId);
+                ytPlayer.playVideo();
+            }
+
+            // ゲーム画面へ遷移
+            this.scene.start('GameScene');
+        });
+
+        // キャンセルを押した時はモーダルを消去して選曲に戻る
+        cancelBtn.on('pointerdown', () => {
+            overlay.destroy();
+            titleText.destroy();
+            playBtn.destroy();
+            cancelBtn.destroy();
         });
     }
 }
