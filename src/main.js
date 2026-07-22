@@ -3,7 +3,6 @@ import { PatternGenerator } from './bullets/PatternGenerator.js';
 import './style.css';
 import { bossList } from './bosses/index.js';
 import { songList } from './songs/index.js';
-import { EditorScene } from './scenes/EditorScene.js';
 
 let player;
 let keys;
@@ -172,7 +171,6 @@ class HomeScene extends Phaser.Scene {
         editorButton.on('pointerover', () => editorButton.setStyle({ fill: '#00ffff', backgroundColor: '#1d4ed8' }));
         editorButton.on('pointerout', () => editorButton.setStyle({ fill: '#ffffff', backgroundColor: '#2563eb' }));
         editorButton.on('pointerdown', () => {
-            this.scene.start('EditorScene');
         });
     }
 }
@@ -818,7 +816,7 @@ const config = {
         autoCenter: Phaser.Scale.CENTER_BOTH,
         fullscreenTarget: 'game-container'
     },
-    scene: [HomeScene, SelectScene, SettingScene, GameScene, ResultScene, EditorScene]
+    scene: [HomeScene, SelectScene, SettingScene, GameScene, ResultScene]
 };
 
 const tag = document.createElement('script');
