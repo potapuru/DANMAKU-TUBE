@@ -286,8 +286,8 @@ export class EditorScene extends Phaser.Scene {
         this.renderTimelineNodes();
     }
 
-    /**
-     * タイムライン上のイベントノードを再描画する処理（ドラッグ＆ドロップ対応）
+/**
+     * タイムライン上のイベントノードを再描画する処理（ドラッグ＆ドロップ完全対応）
      */
     renderTimelineNodes() {
         if (!this.nodeContainer || !this.chart) return;
@@ -295,17 +295,48 @@ export class EditorScene extends Phaser.Scene {
         this.nodeContainer.removeAll(true);
         this.nodeViews.clear();
 
+        // Phaserのドラッグイベントリスナー（二重登録を防ぐため一度解除）
+        this.input.off('drag');
+        this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+            if (!gameObject.eventId) return;
+
+            // X座標をレーン内に収める
+            const clampedX = Phaser.Math.Clamp(dragX, this.laneX, this.laneX + this.laneWidth);
+            gameObject.x = clampedX;
+
+            // 座標から時間を逆算して更新
+            const newRatio = (clampedX - this.laneX) / this.laneWidth;
+            const newTimeMs = Math.round(newRatio * this.totalDurationMs);
+
+            // ChartModelのデータを更新
+            this.chart.updateEvent(gameObject.eventId, { time: newTimeMs });
+
+            // ノード下部の時間テキスト更新
+            if (gameObject.label) {
+                gameObject.label.setText(`${(newTimeMs / 1000).toFixed(1)}s`);
+            }
+        });
+
+        // ドラッグ終了時に全ノードを再描画＆時間順ソート
+        this.input.off('dragend');
+        this.input.on('dragend', (pointer, gameObject) => {
+            if (gameObject.eventId) {
+                this.renderTimelineNodes();
+            }
+        });
+
         // チャート内のイベント一覧を取得
         const events = this.chart.attackPattern || [];
 
         events.forEach(event => {
-            const ratio = event.time / this.totalDurationMs;
+            const ratio = this.totalDurationMs > 0 ? (event.time / this.totalDurationMs) : 0;
             const nodeX = this.laneX + (ratio * this.laneWidth);
             const nodeY = this.laneY + 50;
 
             const isSelected = (event.id === this.selectedEventId);
             const nodeGroup = this.add.container(nodeX, nodeY);
-            
+            nodeGroup.eventId = event.id; // イベントIDを保持
+
             // ノードの見た目（ひし形）
             const shape = this.add.polygon(0, 0, [0, -12, 12, 0, 0, 12, -12, 0], isSelected ? 0x00ffff : 0xff00ff, 1);
             shape.setStrokeStyle(2, isSelected ? 0xffffff : 0x000000);
@@ -315,35 +346,21 @@ export class EditorScene extends Phaser.Scene {
                 fontSize: '11px', fontFamily: 'Monospace', fill: isSelected ? '#00ffff' : '#94a3b8'
             }).setOrigin(0.5);
 
+            nodeGroup.label = label;
             nodeGroup.add([shape, label]);
-            nodeGroup.setSize(24, 24);
+
+            // 🌟 物理判定用のサイズ指定とヒットエリア作成
+            nodeGroup.setSize(30, 30);
+            const hitArea = new Phaser.Geom.Rectangle(-15, -15, 30, 30);
+            nodeGroup.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
             
-            // ドラッグ可能にする設定
-            nodeGroup.setInteractive({ useHandCursor: true, draggable: true });
+            // 🌟 Phaser全体のインプットシステムにドラッグ可能として登録
+            this.input.setDraggable(nodeGroup);
 
-            // クリック選択
-            nodeGroup.on('pointerdown', (pointer) => {
+            // 選択タップ時の処理
+            nodeGroup.on('pointerdown', () => {
                 this.selectedEventId = event.id;
-                this.renderTimelineNodes();
                 this.updateParamPanelText(event);
-            });
-
-            // ドラッグ移動処理
-            nodeGroup.on('drag', (pointer, dragX) => {
-                const clampedX = Phaser.Math.Clamp(dragX, this.laneX, this.laneX + this.laneWidth);
-                nodeGroup.x = clampedX;
-                
-                // 座標から時間を逆算して更新
-                const newRatio = (clampedX - this.laneX) / this.laneWidth;
-                const newTimeMs = Math.round(newRatio * this.totalDurationMs);
-                
-                this.chart.updateEvent(event.id, { time: newTimeMs });
-                label.setText(`${(newTimeMs / 1000).toFixed(1)}s`);
-            });
-
-            // ドラッグ終了時に再描画・時間ソート
-            nodeGroup.on('dragend', () => {
-                this.renderTimelineNodes();
             });
 
             this.nodeContainer.add(nodeGroup);
