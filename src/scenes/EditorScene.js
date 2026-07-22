@@ -444,9 +444,21 @@ export class EditorScene extends Phaser.Scene {
         return `${min}:${sec}.${milli}`;
     }
 
-    updateYouTubePosition() {
+updateYouTubePosition() {
         const playerElem = document.getElementById('youtube-player');
         if (!playerElem) return;
+
+        // 🌟 黒いシート（オーバーレイ）要素の取得・自動生成
+        let overlayElem = document.getElementById('youtube-overlay');
+        if (!overlayElem) {
+            overlayElem = document.createElement('div');
+            overlayElem.id = 'youtube-overlay';
+            overlayElem.style.position = 'fixed';
+            overlayElem.style.backgroundColor = 'rgba(0, 0, 0, 0.65)'; // 🌟 黒シートの濃さ（0.65 = 65%黒）
+            overlayElem.style.pointerEvents = 'none'; // クリック操作を通す
+            overlayElem.style.zIndex = '101'; // YouTube (zIndex:100) の直上に配置
+            document.body.appendChild(overlayElem);
+        }
 
         const bounds = this.scale.canvasBounds;
         const scaleX = bounds.width / 1280;
@@ -457,14 +469,22 @@ export class EditorScene extends Phaser.Scene {
         const realWidth = this.previewWidth * scaleX;
         const realHeight = this.previewHeight * scaleY;
 
+        // YouTube プレイヤーの位置調整
         playerElem.style.display = 'block';
         playerElem.style.position = 'fixed';
         playerElem.style.left = `${realLeft}px`;
         playerElem.style.top = `${realTop}px`;
         playerElem.style.width = `${realWidth}px`;
         playerElem.style.height = `${realHeight}px`;
-        playerElem.style.zIndex = '100'; // 🌟 z-indexを100に設定（URL入力フォームの99999より下にする）
+        playerElem.style.zIndex = '100';
         playerElem.style.pointerEvents = 'auto';
+
+        // 🌟 黒シートをYouTubeと全く同じ位置・サイズに配置
+        overlayElem.style.display = 'block';
+        overlayElem.style.left = `${realLeft}px`;
+        overlayElem.style.top = `${realTop}px`;
+        overlayElem.style.width = `${realWidth}px`;
+        overlayElem.style.height = `${realHeight}px`;
     }
 
     setupYouTubePlayer() {
@@ -570,17 +590,17 @@ export class EditorScene extends Phaser.Scene {
     }
 
     cleanupDomElements() {
-        // 🌟 YouTube プレイヤー（iframe/div）を完全に画面から消去
+        // 🌟 YouTube プレイヤーおよび黒シートの非表示・消去
         const ytElem = document.getElementById('youtube-player');
         if (ytElem) {
             ytElem.style.display = 'none';
-            // 親要素があれば完全に要素を取り除く
-            if (ytElem.parentNode) {
-                ytElem.parentNode.removeChild(ytElem);
-            }
         }
 
-        // 🌟 YouTubeの再生を停止
+        const overlayElem = document.getElementById('youtube-overlay');
+        if (overlayElem) {
+            overlayElem.style.display = 'none';
+        }
+
         if (window.ytPlayer && typeof window.ytPlayer.pauseVideo === 'function') {
             try {
                 window.ytPlayer.pauseVideo();
@@ -589,33 +609,18 @@ export class EditorScene extends Phaser.Scene {
             }
         }
 
-        // 🌟 ヘッダーのURL/タイトル入力バーを完全削除
+        // 直接生成された HTML コンテナの削除
         const formContainer = document.getElementById('editor-yt-form-container');
         if (formContainer) {
             formContainer.remove();
         }
 
-        // 🌟 Phaser の DOM Overlay 要素を全て破棄
+        // Phaser の DOM Overlay 要素の削除
         if (this.domElements) {
             this.domElements.forEach(el => {
-                if (el && el.destroy) {
-                    el.destroy();
-                }
+                if (el && el.destroy) el.destroy();
             });
             this.domElements = [];
-        }
-    }
-
-    update() {
-        const yt = window.ytPlayer;
-        if (this.isPlaying && yt && typeof yt.getCurrentTime === 'function') {
-            this.currentTimeMs = yt.getCurrentTime() * 1000;
-            if (yt.getDuration) {
-                const dur = yt.getDuration();
-                if (dur > 0) this.totalDurationMs = dur * 1000;
-            }
-            this.updatePlayhead();
-            this.timeDisplay.setText(`${this.formatTime(this.currentTimeMs)} / ${this.formatTime(this.totalDurationMs)}`);
         }
     }
 
