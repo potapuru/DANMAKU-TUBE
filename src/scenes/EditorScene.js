@@ -25,6 +25,24 @@ export class EditorScene extends Phaser.Scene {
         const screenWidth = this.cameras.main.width;
         const screenHeight = this.cameras.main.height;
 
+        // 🌟 プレビュー表示エリアのサイズ定義（くり抜き用）
+        this.previewX = 20;
+        this.previewY = 55;
+        this.previewWidth = 800;
+        this.previewHeight = 450;
+
+        // 🌟 背景描画（プレビュー枠の部分だけ空けて周りを塗りつぶす）
+        const bg = this.add.graphics();
+        bg.fillStyle(0x0f172a, 1);
+        // 上部
+        bg.fillRect(0, 0, screenWidth, this.previewY);
+        // 左側
+        bg.fillRect(0, this.previewY, this.previewX, this.previewHeight);
+        // 右側
+        bg.fillRect(this.previewX + this.previewWidth, this.previewY, screenWidth - (this.previewX + this.previewWidth), this.previewHeight);
+        // 下部
+        bg.fillRect(0, this.previewY + this.previewHeight, screenWidth, screenHeight - (this.previewY + this.previewHeight));
+
         // 背景
         this.add.rectangle(0, 0, screenWidth, screenHeight, 0x0f172a).setOrigin(0);
 
@@ -184,27 +202,14 @@ export class EditorScene extends Phaser.Scene {
     }
 
     createPreviewArea(screenWidth, screenHeight) {
-        this.previewX = 20;
-        this.previewY = 55;
-        this.previewWidth = 800;
-        this.previewHeight = 450;
-
-        // 🌟 1. 枠線描画用グラフィック
-        const bg = this.add.graphics();
-        bg.lineStyle(2, 0x334155, 1);
-        bg.strokeRect(this.previewX, this.previewY, this.previewWidth, this.previewHeight);
-
-        // 🌟 2. YouTubeの上に被せる黒シート（70%黒の半透明）
-        // ※ Phaserの要素なので、YouTube(裏)と弾幕/プレイヤー(表)の間に確実に挟まります
-        this.previewOverlay = this.add.rectangle(
-            this.previewX + this.previewWidth / 2,
-            this.previewY + this.previewHeight / 2,
-            this.previewWidth,
-            this.previewHeight,
-            0x000000,
-            0.7 // 🌟 暗さの調整（0.7 = 70%の黒透明）。暗くしたい場合は 0.8 等に
-        );
-        this.previewOverlay.setDepth(1); // 描画順を制御
+        // 🌟 動画の上に被せる黒いシート（65%透過の黒）
+        const overlay = this.add.graphics();
+        overlay.fillStyle(0x000000, 0.65); // 0.65 = 65%の暗さ（暗くしたい場合は0.8などに変更可能）
+        overlay.fillRect(this.previewX, this.previewY, this.previewWidth, this.previewHeight);
+        
+        // 枠線
+        overlay.lineStyle(2, 0x334155, 1);
+        overlay.strokeRect(this.previewX, this.previewY, this.previewWidth, this.previewHeight);
     }
 
     createParameterPanel(screenWidth, screenHeight) {
@@ -479,11 +484,11 @@ export class EditorScene extends Phaser.Scene {
         playerElem.style.top = `${realTop}px`;
         playerElem.style.width = `${realWidth}px`;
         playerElem.style.height = `${realHeight}px`;
-        playerElem.style.zIndex = '0'; // キャンバスより奥に配置
+        playerElem.style.zIndex = '0'; // キャンバスより奥
         playerElem.style.pointerEvents = 'auto';
 
-        // ゲーム用のキャンバス要素の zIndex を 1 にして上に来るようにする
-        if (this.game.canvas) {
+        // 🌟 ゲーム用のキャンバス要素の zIndex を 1 にして手前にする
+        if (this.game && this.game.canvas) {
             this.game.canvas.style.position = 'relative';
             this.game.canvas.style.zIndex = '1';
         }
