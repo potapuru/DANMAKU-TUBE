@@ -31,7 +31,7 @@ export class EditorScene extends Phaser.Scene {
         this.previewWidth = 800;
         this.previewHeight = 450;
 
-        // 🌟 背景描画（プレビュー枠（動画枠）の部分だけ空けて周りを塗りつぶす）
+        // 🌟 背景描画（プレビュー枠の部分だけ空けて周りを塗りつぶす）
         const bg = this.add.graphics();
         bg.fillStyle(0x0f172a, 1);
         // 上部
@@ -42,8 +42,6 @@ export class EditorScene extends Phaser.Scene {
         bg.fillRect(this.previewX + this.previewWidth, this.previewY, screenWidth - (this.previewX + this.previewWidth), this.previewHeight);
         // 下部
         bg.fillRect(0, this.previewY + this.previewHeight, screenWidth, screenHeight - (this.previewY + this.previewHeight));
-
-        // ❌ ここにあった this.add.rectangle(0, 0, screenWidth, screenHeight, 0x0f172a).setOrigin(0); を削除しました！
 
         // --- 1. プレビュー＆YouTube表示エリア ---
         this.createPreviewArea(screenWidth, screenHeight);
