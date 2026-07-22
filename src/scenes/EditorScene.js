@@ -217,12 +217,16 @@ export class EditorScene extends Phaser.Scene {
         });
     }
 
+/**
+     * 4. タイムラインエリアの実装
+     */
     createTimelineArea(screenWidth, screenHeight) {
         this.tlX = 20;
         this.tlY = 520;
         this.tlWidth = screenWidth - 40;
         this.tlHeight = 180;
 
+        // 背景
         const bg = this.add.graphics();
         bg.fillStyle(0x020617, 0.95);
         bg.fillRect(this.tlX, this.tlY, this.tlWidth, this.tlHeight);
@@ -236,20 +240,26 @@ export class EditorScene extends Phaser.Scene {
 
         this.playBtn.on('pointerdown', () => this.togglePlay());
 
+        // 時間表示
         this.timeDisplay = this.add.text(this.tlX + 110, this.tlY + 16, '00:00.000 / 03:00.000', {
             fontSize: '15px', fontFamily: 'Monospace', fill: '#00ffff'
         });
 
+        // ➕ 弾幕を配置ボタン（現在の時間位置にノードを追加）
         const addBtn = this.add.text(this.tlX + this.tlWidth - 130, this.tlY + 12, '➕ 弾幕を配置', {
             fontSize: '14px', fontWeight: 'bold', fill: '#ffffff', backgroundColor: '#16a34a', padding: { x: 12, y: 6 }
         }).setInteractive({ useHandCursor: true });
 
         addBtn.on('pointerdown', () => {
-            const newEv = this.chart.addEvent(this.currentTimeMs, BULLET_TYPES.NORMAL);
+            if (!this.chart) return;
+            // 現在の再生時間の位置に新しい弾幕イベントを追加
+            const newEv = this.chart.addEvent(Math.round(this.currentTimeMs), BULLET_TYPES.NORMAL || 'NORMAL');
             this.selectedEventId = newEv.id;
             this.renderTimelineNodes();
+            this.updateParamPanelText(newEv);
         });
 
+        // タイムラインレーン設定
         this.laneX = this.tlX + 15;
         this.laneY = this.tlY + 55;
         this.laneWidth = this.tlWidth - 30;
@@ -259,6 +269,7 @@ export class EditorScene extends Phaser.Scene {
         laneBg.fillStyle(0x0f172a, 1);
         laneBg.fillRect(this.laneX, this.laneY, this.laneWidth, this.laneHeight);
 
+        // レーンクリックでその時間へシーク
         const laneZone = this.add.zone(this.laneX, this.laneY, this.laneWidth, this.laneHeight).setOrigin(0).setInteractive();
         laneZone.on('pointerdown', (pointer) => {
             const clickX = pointer.x - this.laneX;
@@ -266,55 +277,77 @@ export class EditorScene extends Phaser.Scene {
             this.seekToMs(targetRatio * this.totalDurationMs);
         });
 
+        // プレイヘッド（赤線）
         this.playhead = this.add.graphics();
         this.updatePlayhead();
 
+        // ノード描画用コンテナ
         this.nodeContainer = this.add.container(0, 0);
         this.renderTimelineNodes();
     }
 
+    /**
+     * タイムライン上のイベントノードを再描画する処理（ドラッグ＆ドロップ対応）
+     */
     renderTimelineNodes() {
+        if (!this.nodeContainer || !this.chart) return;
+
         this.nodeContainer.removeAll(true);
         this.nodeViews.clear();
 
-        this.chart.attackPattern.forEach(event => {
+        // チャート内のイベント一覧を取得
+        const events = this.chart.attackPattern || [];
+
+        events.forEach(event => {
             const ratio = event.time / this.totalDurationMs;
             const nodeX = this.laneX + (ratio * this.laneWidth);
             const nodeY = this.laneY + 50;
 
             const isSelected = (event.id === this.selectedEventId);
-            const nodeContainer = this.add.container(nodeX, nodeY);
+            const nodeGroup = this.add.container(nodeX, nodeY);
             
+            // ノードの見た目（ひし形）
             const shape = this.add.polygon(0, 0, [0, -12, 12, 0, 0, 12, -12, 0], isSelected ? 0x00ffff : 0xff00ff, 1);
             shape.setStrokeStyle(2, isSelected ? 0xffffff : 0x000000);
 
+            // ノード下の時間テキスト
             const label = this.add.text(0, 18, `${(event.time / 1000).toFixed(1)}s`, {
                 fontSize: '11px', fontFamily: 'Monospace', fill: isSelected ? '#00ffff' : '#94a3b8'
             }).setOrigin(0.5);
 
-            nodeContainer.add([shape, label]);
-            nodeContainer.setSize(24, 24);
-            nodeContainer.setInteractive({ useHandCursor: true, draggable: true });
+            nodeGroup.add([shape, label]);
+            nodeGroup.setSize(24, 24);
+            
+            // ドラッグ可能にする設定
+            nodeGroup.setInteractive({ useHandCursor: true, draggable: true });
 
-            nodeContainer.on('pointerdown', () => {
+            // クリック選択
+            nodeGroup.on('pointerdown', (pointer) => {
                 this.selectedEventId = event.id;
                 this.renderTimelineNodes();
                 this.updateParamPanelText(event);
             });
 
-            nodeContainer.on('drag', (pointer, dragX) => {
+            // ドラッグ移動処理
+            nodeGroup.on('drag', (pointer, dragX) => {
                 const clampedX = Phaser.Math.Clamp(dragX, this.laneX, this.laneX + this.laneWidth);
-                nodeContainer.x = clampedX;
+                nodeGroup.x = clampedX;
+                
+                // 座標から時間を逆算して更新
                 const newRatio = (clampedX - this.laneX) / this.laneWidth;
                 const newTimeMs = Math.round(newRatio * this.totalDurationMs);
+                
                 this.chart.updateEvent(event.id, { time: newTimeMs });
                 label.setText(`${(newTimeMs / 1000).toFixed(1)}s`);
             });
 
-            nodeContainer.on('dragend', () => this.renderTimelineNodes());
+            // ドラッグ終了時に再描画・時間ソート
+            nodeGroup.on('dragend', () => {
+                this.renderTimelineNodes();
+            });
 
-            this.nodeContainer.add(nodeContainer);
-            this.nodeViews.set(event.id, nodeContainer);
+            this.nodeContainer.add(nodeGroup);
+            this.nodeViews.set(event.id, nodeGroup);
         });
     }
 
