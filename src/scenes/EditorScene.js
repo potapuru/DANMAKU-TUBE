@@ -569,26 +569,38 @@ export class EditorScene extends Phaser.Scene {
         if (spreadEl) spreadEl.value = event.spread || 60;
     }
 
-cleanupDomElements() {
-        // 🌟 YouTubeプレイヤーを非表示化＆停止
+    cleanupDomElements() {
+        // 🌟 YouTube プレイヤー（iframe/div）を完全に画面から消去
         const ytElem = document.getElementById('youtube-player');
         if (ytElem) {
             ytElem.style.display = 'none';
-        }
-        if (window.ytPlayer && typeof window.ytPlayer.pauseVideo === 'function') {
-            window.ytPlayer.pauseVideo();
+            // 親要素があれば完全に要素を取り除く
+            if (ytElem.parentNode) {
+                ytElem.parentNode.removeChild(ytElem);
+            }
         }
 
-        // 直接生成された HTML コンテナの削除
+        // 🌟 YouTubeの再生を停止
+        if (window.ytPlayer && typeof window.ytPlayer.pauseVideo === 'function') {
+            try {
+                window.ytPlayer.pauseVideo();
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        // 🌟 ヘッダーのURL/タイトル入力バーを完全削除
         const formContainer = document.getElementById('editor-yt-form-container');
         if (formContainer) {
             formContainer.remove();
         }
 
-        // Phaser の DOM Overlay 要素の削除
+        // 🌟 Phaser の DOM Overlay 要素を全て破棄
         if (this.domElements) {
             this.domElements.forEach(el => {
-                if (el && el.destroy) el.destroy();
+                if (el && el.destroy) {
+                    el.destroy();
+                }
             });
             this.domElements = [];
         }
