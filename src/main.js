@@ -158,20 +158,6 @@ class HomeScene extends Phaser.Scene {
             btnBorder.destroy();
             this.scene.start('SelectScene');
         });
-        // 🌟 【新規追加】譜面をつくる（エディタ）ボタン
-        const editorButton = this.add.text(centerX, centerY + 110, '🛠️ 譜面をつくる (エディタ)', { 
-            fontSize: '22px', 
-            fontFamily: 'Arial',
-            fontWeight: 'bold',
-            fill: '#ffffff',
-            backgroundColor: '#2563eb',
-            padding: { x: 20, y: 10 }
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-        editorButton.on('pointerover', () => editorButton.setStyle({ fill: '#00ffff', backgroundColor: '#1d4ed8' }));
-        editorButton.on('pointerout', () => editorButton.setStyle({ fill: '#ffffff', backgroundColor: '#2563eb' }));
-        editorButton.on('pointerdown', () => {
-        });
     }
 }
 
