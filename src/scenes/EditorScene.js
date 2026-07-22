@@ -189,11 +189,22 @@ export class EditorScene extends Phaser.Scene {
         this.previewWidth = 800;
         this.previewHeight = 450;
 
+        // 🌟 1. 枠線描画用グラフィック
         const bg = this.add.graphics();
-        bg.fillStyle(0x000000, 0.9);
-        bg.fillRect(this.previewX, this.previewY, this.previewWidth, this.previewHeight);
         bg.lineStyle(2, 0x334155, 1);
         bg.strokeRect(this.previewX, this.previewY, this.previewWidth, this.previewHeight);
+
+        // 🌟 2. YouTubeの上に被せる黒シート（70%黒の半透明）
+        // ※ Phaserの要素なので、YouTube(裏)と弾幕/プレイヤー(表)の間に確実に挟まります
+        this.previewOverlay = this.add.rectangle(
+            this.previewX + this.previewWidth / 2,
+            this.previewY + this.previewHeight / 2,
+            this.previewWidth,
+            this.previewHeight,
+            0x000000,
+            0.7 // 🌟 暗さの調整（0.7 = 70%の黒透明）。暗くしたい場合は 0.8 等に
+        );
+        this.previewOverlay.setDepth(1); // 描画順を制御
     }
 
     createParameterPanel(screenWidth, screenHeight) {
@@ -448,17 +459,9 @@ export class EditorScene extends Phaser.Scene {
         const playerElem = document.getElementById('youtube-player');
         if (!playerElem) return;
 
-        // 🌟 黒いシート（HTMLオーバーレイ）を取得、無ければ作成
-        let overlayElem = document.getElementById('youtube-overlay');
-        if (!overlayElem) {
-            overlayElem = document.createElement('div');
-            overlayElem.id = 'youtube-overlay';
-            overlayElem.style.position = 'fixed';
-            overlayElem.style.backgroundColor = 'rgba(15, 23, 42, 0.75)'; // 暗さ（75%のダークブルー/黒）
-            overlayElem.style.pointerEvents = 'none'; // クリック入力を動画側に通過させる
-            overlayElem.style.zIndex = '101'; // YouTube (100) の直上に重ねる
-            document.body.appendChild(overlayElem);
-        }
+        // 不要な HTML overlay が残っていれば削除
+        const oldOverlay = document.getElementById('youtube-overlay');
+        if (oldOverlay) oldOverlay.remove();
 
         const bounds = this.scale.canvasBounds;
         const scaleX = bounds.width / 1280;
@@ -469,22 +472,21 @@ export class EditorScene extends Phaser.Scene {
         const realWidth = this.previewWidth * scaleX;
         const realHeight = this.previewHeight * scaleY;
 
-        // YouTube プレイヤーの位置設定
+        // 🌟 YouTube プレイヤーの位置設定（キャンバスの裏側に配置）
         playerElem.style.display = 'block';
         playerElem.style.position = 'fixed';
         playerElem.style.left = `${realLeft}px`;
         playerElem.style.top = `${realTop}px`;
         playerElem.style.width = `${realWidth}px`;
         playerElem.style.height = `${realHeight}px`;
-        playerElem.style.zIndex = '100';
+        playerElem.style.zIndex = '0'; // キャンバスより奥に配置
         playerElem.style.pointerEvents = 'auto';
 
-        // 🌟 黒いシートも全く同じサイズ・位置に重ねる
-        overlayElem.style.display = 'block';
-        overlayElem.style.left = `${realLeft}px`;
-        overlayElem.style.top = `${realTop}px`;
-        overlayElem.style.width = `${realWidth}px`;
-        overlayElem.style.height = `${realHeight}px`;
+        // ゲーム用のキャンバス要素の zIndex を 1 にして上に来るようにする
+        if (this.game.canvas) {
+            this.game.canvas.style.position = 'relative';
+            this.game.canvas.style.zIndex = '1';
+        }
     }
 
     setupYouTubePlayer() {
@@ -590,13 +592,12 @@ export class EditorScene extends Phaser.Scene {
     }
 
     cleanupDomElements() {
-        // 🌟 YouTube プレイヤーの非表示＆削除
+        // 🌟 YouTube プレイヤーの非表示
         const ytElem = document.getElementById('youtube-player');
         if (ytElem) {
             ytElem.style.display = 'none';
         }
 
-        // 🌟 黒いシートの完全削除
         const overlayElem = document.getElementById('youtube-overlay');
         if (overlayElem) {
             overlayElem.remove();
