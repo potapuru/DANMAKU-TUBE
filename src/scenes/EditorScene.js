@@ -31,7 +31,7 @@ export class EditorScene extends Phaser.Scene {
         // --- 1. プレビュー＆YouTube表示エリア ---
         this.createPreviewArea(screenWidth, screenHeight);
 
-        // --- 2. ヘッダーエリア（BACKボタン ＆ URL入力フォーム） ---
+        // --- 2. ヘッダーエリア（BACKボタン ＆ URL・タイトル入力フォーム） ---
         this.createHeader(screenWidth);
 
         // --- 3. パラメータ編集エリア ---
@@ -65,10 +65,10 @@ export class EditorScene extends Phaser.Scene {
     }
 
     /**
-     * 1. ヘッダーエリア（BACKボタンの右隣にURL入力欄を配置）
+     * 1. ヘッダーエリア（BACKボタン ＆ URL・タイトル入力欄）
      */
     createHeader(screenWidth) {
-        // 🔙 BACKボタン (x: 20, y: 12)
+        // 🔙 BACKボタン (x: 25, y: 15)
         const backBtn = this.add.text(25, 15, '← BACK', {
             fontSize: '15px',
             fontFamily: 'Arial',
@@ -88,81 +88,63 @@ export class EditorScene extends Phaser.Scene {
             this.scene.start('HomeScene');
         });
 
-        // 🌟 既存の入力バー要素があれば削除
-        const oldForm = document.getElementById('editor-yt-form-container');
-        if (oldForm) oldForm.remove();
-
-        // 🌟 HTML DOMを直接作成して最前面（z-index: 99999）に配置
-        const formContainer = document.createElement('div');
-        formContainer.id = 'editor-yt-form-container';
-        formContainer.style.cssText = `
-            position: absolute;
-            left: 120px;
-            top: 10px;
-            z-index: 99999;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: Arial, sans-serif;
-            pointer-events: auto;
-        `;
-
-        formContainer.innerHTML = `
-            <span style="color: #94a3b8; font-size: 13px; font-weight: bold; white-space: nowrap;">🔗 URL:</span>
-            <input type="text" id="editor-yt-url-input" 
-                   value="https://www.youtube.com/watch?v=${this.chart ? this.chart.youtubeId : 'dQw4w9WgXcQ'}" 
-                   placeholder="https://www.youtube.com/watch?v=..." 
-                   style="width: 320px; padding: 5px 8px; background: #0f172a; color: #00ffff; border: 1px solid #334155; border-radius: 4px; font-size: 13px; outline: none;" />
-            <button id="editor-yt-load-btn" 
-                    style="padding: 5px 12px; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap;">
-                読み込む
-            </button>
-            </div>
-
+        // 🔗 URL ＆ 🏷️ タイトル入力フォーム（Phaser DOM Overlay で配置して重なり防止）
+        const formHtml = `
+            <div id="editor-yt-form-container" style="display: flex; align-items: center; gap: 12px; font-family: Arial, sans-serif; pointer-events: auto;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="color: #94a3b8; font-size: 13px; font-weight: bold; white-space: nowrap;">🔗 URL:</span>
+                    <input type="text" id="editor-yt-url-input" 
+                           value="${this.chart && this.chart.youtubeId ? 'https://www.youtube.com/watch?v=' + this.chart.youtubeId : ''}" 
+                           placeholder="https://www.youtube.com/watch?v=..." 
+                           style="width: 250px; padding: 5px 8px; background: #0f172a; color: #00ffff; border: 1px solid #334155; border-radius: 4px; font-size: 13px; outline: none;" />
+                    <button id="editor-yt-load-btn" 
+                            style="padding: 5px 10px; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap;">
+                        読み込む
+                    </button>
+                </div>
                 <div style="display: flex; align-items: center; gap: 6px;">
                     <span style="color: #94a3b8; font-size: 13px; font-weight: bold; white-space: nowrap;">🏷️ タイトル:</span>
                     <input type="text" id="editor-title-input" 
                            value="${this.chart && this.chart.title ? this.chart.title : ''}" 
-                           placeholder="曲名・譜面名を入力..." 
-                           style="width: 200px; padding: 5px 8px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px; font-size: 13px; outline: none;" />
+                           placeholder="曲名・譜面名..." 
+                           style="width: 180px; padding: 5px 8px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px; font-size: 13px; outline: none;" />
                 </div>
             </div>
         `;
 
-        // game-container 内に追加
-        const gameContainer = document.getElementById('game-container') || document.body;
-        gameContainer.appendChild(formContainer);
+        const formDom = this.add.dom(140, 15).createFromHTML(formHtml).setOrigin(0, 0);
+        this.domElements.push(formDom);
 
-        // イベントリスナーの登録
-        const loadBtn = document.getElementById('editor-yt-load-btn');
-        const urlInput = document.getElementById('editor-yt-url-input');
-        const titleInput = document.getElementById('editor-title-input');
+        // イベントリスナー登録
+        setTimeout(() => {
+            const loadBtn = document.getElementById('editor-yt-load-btn');
+            const urlInput = document.getElementById('editor-yt-url-input');
+            const titleInput = document.getElementById('editor-title-input');
 
-        if (loadBtn && urlInput) {
-            const handleLoad = () => {
-                const inputVal = urlInput.value;
-                const extractedId = this.extractYouTubeId(inputVal);
-                if (extractedId) {
-                    if (this.chart) this.chart.youtubeId = extractedId;
-                    this.loadYouTubeVideo(extractedId);
-                } else {
-                    alert('有効なYouTube URLを入力してください。');
-                }
-            };
+            if (loadBtn && urlInput) {
+                const handleLoad = () => {
+                    const inputVal = urlInput.value;
+                    const extractedId = this.extractYouTubeId(inputVal);
+                    if (extractedId) {
+                        if (this.chart) this.chart.youtubeId = extractedId;
+                        this.loadYouTubeVideo(extractedId);
+                    } else {
+                        alert('有効なYouTube URLを入力してください。');
+                    }
+                };
 
-            loadBtn.onclick = handleLoad;
-            urlInput.onkeypress = (e) => {
-                if (e.key === 'Enter') handleLoad();
-            };
-        }
-        // タイトル変更時に chart オブジェクトの title もリアルタイム更新
-        if (titleInput) {
-            titleInput.oninput = () => {
-                if (this.chart) {
-                    this.chart.title = titleInput.value;
-                }
-            };
-        }
+                loadBtn.onclick = handleLoad;
+                urlInput.onkeypress = (e) => {
+                    if (e.key === 'Enter') handleLoad();
+                };
+            }
+
+            if (titleInput) {
+                titleInput.oninput = () => {
+                    if (this.chart) this.chart.title = titleInput.value;
+                };
+            }
+        }, 100);
 
         // 💾 保存ボタン
         const saveBtn = this.add.text(screenWidth - 100, 12, '💾 保存', {
@@ -196,6 +178,9 @@ export class EditorScene extends Phaser.Scene {
         bg.strokeRect(this.previewX, this.previewY, this.previewWidth, this.previewHeight);
     }
 
+    /**
+     * 3. パラメータ編集エリア（右側パネル）
+     */
     createParameterPanel(screenWidth, screenHeight) {
         const panelX = 840;
         const panelY = 55;
@@ -214,44 +199,44 @@ export class EditorScene extends Phaser.Scene {
             fontSize: '18px', fontWeight: 'bold', fill: '#00ffff'
         });
 
-        // パラメータ入力用 HTML フォームの埋め込み
+        // 🌟 パラメータフォーム（選択時に表示される）
         const paramHtml = `
             <div id="editor-param-form" style="width: 380px; color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; pointer-events: auto; display: none;">
-                <div style="margin-bottom: 10px;">
-                    <label style="color: #94a3b8; display: block; margin-bottom: 4px;">弾の種類:</label>
-                    <select id="param-type" style="width: 100%; padding: 5px; background: #0f172a; color: #00ffff; border: 1px solid #334155; border-radius: 4px;">
+                <div style="margin-bottom: 12px;">
+                    <label style="color: #94a3b8; display: block; margin-bottom: 4px; font-weight: bold;">弾の種類:</label>
+                    <select id="param-type" style="width: 100%; padding: 6px; background: #0f172a; color: #00ffff; border: 1px solid #334155; border-radius: 4px; outline: none;">
                         <option value="NORMAL">通常弾 (NORMAL)</option>
-                        <option value="RING">リング弾 (RING)</option>
-                        <option value="WAY">WAY弾 (WAY)</option>
+                        <option value="RING">全方位リング弾 (RING)</option>
+                        <option value="WAY">n-WAY弾 (WAY)</option>
                         <option value="SPIRAL">渦巻き弾 (SPIRAL)</option>
                     </select>
                 </div>
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 12px;">
                     <div style="flex: 1;">
-                        <label style="color: #94a3b8; display: block; margin-bottom: 4px;">速度:</label>
-                        <input type="number" id="param-speed" value="200" step="10" style="width: 90%; padding: 5px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px;" />
+                        <label style="color: #94a3b8; display: block; margin-bottom: 4px; font-weight: bold;">速度 (speed):</label>
+                        <input type="number" id="param-speed" value="200" step="10" style="width: 90%; padding: 6px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px; outline: none;" />
                     </div>
                     <div style="flex: 1;">
-                        <label style="color: #94a3b8; display: block; margin-bottom: 4px;">弾数 (WAY/RING):</label>
-                        <input type="number" id="param-count" value="5" min="1" max="64" style="width: 90%; padding: 5px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px;" />
-                    </div>
-                </div>
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <div style="flex: 1;">
-                        <label style="color: #94a3b8; display: block; margin-bottom: 4px;">発射角度 (°):</label>
-                        <input type="number" id="param-angle" value="90" step="5" style="width: 90%; padding: 5px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px;" />
-                    </div>
-                    <div style="flex: 1;">
-                        <label style="color: #94a3b8; display: block; margin-bottom: 4px;">拡散角度 (°):</label>
-                        <input type="number" id="param-spread" value="60" step="5" style="width: 90%; padding: 5px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px;" />
+                        <label style="color: #94a3b8; display: block; margin-bottom: 4px; font-weight: bold;">弾数 (count):</label>
+                        <input type="number" id="param-count" value="5" min="1" max="64" style="width: 90%; padding: 6px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px; outline: none;" />
                     </div>
                 </div>
-                <button id="param-preview-btn" style="width: 100%; padding: 8px; background: #8b5cf6; color: #ffffff; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">
-                    🚀 試射プレビュー (テスト発射)
+                <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                    <div style="flex: 1;">
+                        <label style="color: #94a3b8; display: block; margin-bottom: 4px; font-weight: bold;">発射角度 (angle °):</label>
+                        <input type="number" id="param-angle" value="90" step="5" style="width: 90%; padding: 6px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px; outline: none;" />
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="color: #94a3b8; display: block; margin-bottom: 4px; font-weight: bold;">拡散角度 (spread °):</label>
+                        <input type="number" id="param-spread" value="60" step="5" style="width: 90%; padding: 6px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px; outline: none;" />
+                    </div>
+                </div>
+                <button id="param-delete-btn" style="width: 100%; padding: 8px; background: #dc2626; color: #ffffff; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">
+                    🗑️ 選択中の弾幕を削除
                 </button>
             </div>
-            <div id="param-placeholder" style="color: #94a3b8; font-size: 13px; margin-top: 20px; line-spacing: 6px;">
-                タイムライン上のノードを選択すると<br>詳細パラメータを設定できます。
+            <div id="param-placeholder" style="color: #94a3b8; font-size: 13px; margin-top: 10px; line-height: 1.6;">
+                タイムライン上のノードを選択すると<br>ここに詳細パラメータが表示されます。
             </div>
         `;
 
@@ -269,14 +254,22 @@ export class EditorScene extends Phaser.Scene {
                 }
             });
 
-            const testBtn = document.getElementById('param-preview-btn');
-            if (testBtn) {
-                testBtn.onclick = () => this.triggerPreviewShot();
+            // 削除ボタン
+            const delBtn = document.getElementById('param-delete-btn');
+            if (delBtn) {
+                delBtn.onclick = () => {
+                    if (this.selectedEventId && this.chart) {
+                        this.chart.removeEvent(this.selectedEventId);
+                        this.selectedEventId = null;
+                        this.renderTimelineNodes();
+                        this.updateParamPanelText(null);
+                    }
+                };
             }
-        }, 100);
+        }, 150);
     }
 
-/**
+    /**
      * 4. タイムラインエリアの実装
      */
     createTimelineArea(screenWidth, screenHeight) {
@@ -311,8 +304,7 @@ export class EditorScene extends Phaser.Scene {
 
         addBtn.on('pointerdown', () => {
             if (!this.chart) return;
-            // 現在の再生時間の位置に新しい弾幕イベントを追加
-            const newEv = this.chart.addEvent(Math.round(this.currentTimeMs), BULLET_TYPES.NORMAL || 'NORMAL');
+            const newEv = this.chart.addEvent(Math.round(this.currentTimeMs), BULLET_TYPES ? BULLET_TYPES.NORMAL : 'NORMAL');
             this.selectedEventId = newEv.id;
             this.renderTimelineNodes();
             this.updateParamPanelText(newEv);
@@ -328,7 +320,7 @@ export class EditorScene extends Phaser.Scene {
         laneBg.fillStyle(0x0f172a, 1);
         laneBg.fillRect(this.laneX, this.laneY, this.laneWidth, this.laneHeight);
 
-        // レーンクリックでその時間へシーク
+        // レーンクリックでシーク
         const laneZone = this.add.zone(this.laneX, this.laneY, this.laneWidth, this.laneHeight).setOrigin(0).setInteractive();
         laneZone.on('pointerdown', (pointer) => {
             const clickX = pointer.x - this.laneX;
@@ -345,8 +337,8 @@ export class EditorScene extends Phaser.Scene {
         this.renderTimelineNodes();
     }
 
-/**
-     * タイムライン上のイベントノードを再描画する処理（ドラッグ＆ドロップ完全対応）
+    /**
+     * タイムライン上のイベントノードを再描画する処理
      */
     renderTimelineNodes() {
         if (!this.nodeContainer || !this.chart) return;
@@ -354,29 +346,24 @@ export class EditorScene extends Phaser.Scene {
         this.nodeContainer.removeAll(true);
         this.nodeViews.clear();
 
-        // Phaserのドラッグイベントリスナー（二重登録を防ぐため一度解除）
+        // ドラッグイベントの初期化
         this.input.off('drag');
         this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
             if (!gameObject.eventId) return;
 
-            // X座標をレーン内に収める
             const clampedX = Phaser.Math.Clamp(dragX, this.laneX, this.laneX + this.laneWidth);
             gameObject.x = clampedX;
 
-            // 座標から時間を逆算して更新
             const newRatio = (clampedX - this.laneX) / this.laneWidth;
             const newTimeMs = Math.round(newRatio * this.totalDurationMs);
 
-            // ChartModelのデータを更新
             this.chart.updateEvent(gameObject.eventId, { time: newTimeMs });
 
-            // ノード下部の時間テキスト更新
             if (gameObject.label) {
                 gameObject.label.setText(`${(newTimeMs / 1000).toFixed(1)}s`);
             }
         });
 
-        // ドラッグ終了時に全ノードを再描画＆時間順ソート
         this.input.off('dragend');
         this.input.on('dragend', (pointer, gameObject) => {
             if (gameObject.eventId) {
@@ -384,7 +371,6 @@ export class EditorScene extends Phaser.Scene {
             }
         });
 
-        // チャート内のイベント一覧を取得
         const events = this.chart.attackPattern || [];
 
         events.forEach(event => {
@@ -394,13 +380,13 @@ export class EditorScene extends Phaser.Scene {
 
             const isSelected = (event.id === this.selectedEventId);
             const nodeGroup = this.add.container(nodeX, nodeY);
-            nodeGroup.eventId = event.id; // イベントIDを保持
+            nodeGroup.eventId = event.id;
 
             // ノードの見た目（ひし形）
             const shape = this.add.polygon(0, 0, [0, -12, 12, 0, 0, 12, -12, 0], isSelected ? 0x00ffff : 0xff00ff, 1);
             shape.setStrokeStyle(2, isSelected ? 0xffffff : 0x000000);
 
-            // ノード下の時間テキスト
+            // 時間テキスト
             const label = this.add.text(0, 18, `${(event.time / 1000).toFixed(1)}s`, {
                 fontSize: '11px', fontFamily: 'Monospace', fill: isSelected ? '#00ffff' : '#94a3b8'
             }).setOrigin(0.5);
@@ -408,17 +394,16 @@ export class EditorScene extends Phaser.Scene {
             nodeGroup.label = label;
             nodeGroup.add([shape, label]);
 
-            // 🌟 物理判定用のサイズ指定とヒットエリア作成
+            // 物理判定とドラッグ指定
             nodeGroup.setSize(30, 30);
             const hitArea = new Phaser.Geom.Rectangle(-15, -15, 30, 30);
             nodeGroup.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
-            
-            // 🌟 Phaser全体のインプットシステムにドラッグ可能として登録
             this.input.setDraggable(nodeGroup);
 
-            // 選択タップ時の処理
+            // タップ選択イベント
             nodeGroup.on('pointerdown', () => {
                 this.selectedEventId = event.id;
+                this.renderTimelineNodes();
                 this.updateParamPanelText(event);
             });
 
@@ -463,27 +448,21 @@ export class EditorScene extends Phaser.Scene {
         playerElem.style.top = `${realTop}px`;
         playerElem.style.width = `${realWidth}px`;
         playerElem.style.height = `${realHeight}px`;
-        playerElem.style.zIndex = '100'; // 🌟 z-indexを100に設定（URL入力フォームの99999より下にする）
+        playerElem.style.zIndex = '100';
         playerElem.style.pointerEvents = 'auto';
     }
 
     setupYouTubePlayer() {
         this.updateYouTubePosition();
         this.loadYouTubeVideo(this.chart.youtubeId);
-        // 🌟 シーンが終了（他の画面へ遷移）した際に自動でHTML入力欄を消去する
-        this.events.once('shutdown', () => this.cleanupDomElements());
-        this.events.once('destroy', () => this.cleanupDomElements());
     }
 
-    /**
-     * 自動再生を防止し、MV動画を停止状態で待機させる（cueVideoByIdを使用）
-     */
     loadYouTubeVideo(youtubeId) {
         if (!youtubeId) return;
 
         const currentOrigin = window.location.origin || (window.location.protocol + '//' + window.location.host);
         const playerVarsConfig = {
-            'autoplay': 0, // 自動再生OFF
+            'autoplay': 0,
             'controls': 1,
             'disablekb': 0,
             'rel': 0,
@@ -494,10 +473,7 @@ export class EditorScene extends Phaser.Scene {
         const yt = window.ytPlayer || (window.YT && window.YT.Player ? window.ytPlayer : null);
 
         if (yt && typeof yt.cueVideoById === 'function') {
-            // 🌟 loadVideoById ではなく cueVideoById を使用して勝手な再生を防ぐ
-            yt.cueVideoById({
-                videoId: youtubeId
-            });
+            yt.cueVideoById({ videoId: youtubeId });
             this.isPlaying = false;
             this.playBtn.setText('▶ 再生');
         } else if (window.YT && window.YT.Player) {
@@ -542,6 +518,9 @@ export class EditorScene extends Phaser.Scene {
         this.updatePlayhead();
     }
 
+    /**
+     * パラメータパネルの更新処理
+     */
     updateParamPanelText(event) {
         const form = document.getElementById('editor-param-form');
         const placeholder = document.getElementById('param-placeholder');
@@ -555,7 +534,6 @@ export class EditorScene extends Phaser.Scene {
         if (form) form.style.display = 'block';
         if (placeholder) placeholder.style.display = 'none';
 
-        // 値の反映
         const typeEl = document.getElementById('param-type');
         const speedEl = document.getElementById('param-speed');
         const countEl = document.getElementById('param-count');
@@ -563,39 +541,10 @@ export class EditorScene extends Phaser.Scene {
         const spreadEl = document.getElementById('param-spread');
 
         if (typeEl) typeEl.value = event.type || 'NORMAL';
-        if (speedEl) speedEl.value = event.speed || 200;
-        if (countEl) countEl.value = event.count || 5;
-        if (angleEl) angleEl.value = event.angle || 90;
-        if (spreadEl) spreadEl.value = event.spread || 60;
-    }
-
-    cleanupDomElements() {
-        // 直接生成された HTML コンテナの削除
-        const formContainer = document.getElementById('editor-yt-form-container');
-        if (formContainer) {
-            formContainer.remove();
-        }
-
-        // Phaser の DOM Overlay 要素の削除
-        if (this.domElements) {
-            this.domElements.forEach(el => {
-                if (el && el.destroy) el.destroy();
-            });
-            this.domElements = [];
-        }
-    }
-
-    update() {
-        const yt = window.ytPlayer;
-        if (this.isPlaying && yt && typeof yt.getCurrentTime === 'function') {
-            this.currentTimeMs = yt.getCurrentTime() * 1000;
-            if (yt.getDuration) {
-                const dur = yt.getDuration();
-                if (dur > 0) this.totalDurationMs = dur * 1000;
-            }
-            this.updatePlayhead();
-            this.timeDisplay.setText(`${this.formatTime(this.currentTimeMs)} / ${this.formatTime(this.totalDurationMs)}`);
-        }
+        if (speedEl) speedEl.value = event.speed !== undefined ? event.speed : 200;
+        if (countEl) countEl.value = event.count !== undefined ? event.count : 5;
+        if (angleEl) angleEl.value = event.angle !== undefined ? event.angle : 90;
+        if (spreadEl) spreadEl.value = event.spread !== undefined ? event.spread : 60;
     }
 
     applyParamChanges() {
@@ -615,16 +564,33 @@ export class EditorScene extends Phaser.Scene {
             spread: spreadEl ? parseFloat(spreadEl.value) : 60
         };
 
-        // データモデルの更新
         this.chart.updateEvent(this.selectedEventId, updatedParams);
     }
 
-    triggerPreviewShot() {
-        if (!this.selectedEventId || !this.chart) return;
-        const ev = this.chart.attackPattern.find(e => e.id === this.selectedEventId);
-        if (!ev) return;
+    cleanupDomElements() {
+        const formContainer = document.getElementById('editor-yt-form-container');
+        if (formContainer) {
+            formContainer.remove();
+        }
 
-        console.log('🚀 試射実行:', ev);
-        // ※ 弾のプレビュー生成処理（PatternGenerator呼び出し等）をここに接続できます
+        if (this.domElements) {
+            this.domElements.forEach(el => {
+                if (el && el.destroy) el.destroy();
+            });
+            this.domElements = [];
+        }
+    }
+
+    update() {
+        const yt = window.ytPlayer;
+        if (this.isPlaying && yt && typeof yt.getCurrentTime === 'function') {
+            this.currentTimeMs = yt.getCurrentTime() * 1000;
+            if (yt.getDuration) {
+                const dur = yt.getDuration();
+                if (dur > 0) this.totalDurationMs = dur * 1000;
+            }
+            this.updatePlayhead();
+            this.timeDisplay.setText(`${this.formatTime(this.currentTimeMs)} / ${this.formatTime(this.totalDurationMs)}`);
+        }
     }
 }
