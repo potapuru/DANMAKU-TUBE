@@ -60,7 +60,9 @@ export class EditorScene extends Phaser.Scene {
         return trimmed;
     }
 
-    // 1. ヘッダーエリア（BACKボタンの右隣にURL入力欄を配置）
+    /**
+     * 1. ヘッダーエリア（BACKボタンの右隣にURL入力欄を配置）
+     */
     createHeader(screenWidth) {
         // 🔙 BACKボタン (x: 20, y: 12)
         const backBtn = this.add.text(20, 12, '← BACK', {
@@ -82,48 +84,62 @@ export class EditorScene extends Phaser.Scene {
             this.scene.start('HomeScene');
         });
 
-        // 🔗 BACKボタンの右側(x: 130, y: 10)に配置するHTML入力フォーム
-        const formHtml = `
-            <div style="display: flex; align-items: center; gap: 8px; font-family: Arial, sans-serif; pointer-events: auto;">
-                <span style="color: #94a3b8; font-size: 13px; font-weight: bold; white-space: nowrap;">🔗 URL:</span>
-                <input type="text" id="editor-yt-url-input" 
-                       value="https://www.youtube.com/watch?v=${this.chart ? this.chart.youtubeId : ''}" 
-                       placeholder="https://www.youtube.com/watch?v=..." 
-                       style="width: 320px; padding: 5px 8px; background: #0f172a; color: #00ffff; border: 1px solid #334155; border-radius: 4px; font-size: 13px; outline: none;" />
-                <button id="editor-yt-load-btn" 
-                        style="padding: 5px 12px; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap;">
-                    読み込む
-                </button>
-            </div>
+        // 🌟 既存の入力バー要素があれば削除
+        const oldForm = document.getElementById('editor-yt-form-container');
+        if (oldForm) oldForm.remove();
+
+        // 🌟 HTML DOMを直接作成して最前面（z-index: 99999）に配置
+        const formContainer = document.createElement('div');
+        formContainer.id = 'editor-yt-form-container';
+        formContainer.style.cssText = `
+            position: absolute;
+            left: 120px;
+            top: 10px;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: Arial, sans-serif;
+            pointer-events: auto;
         `;
 
-        // x: 130（BACKボタンの右）、y: 10（高さ位置）にセット
-        const formDom = this.add.dom(130, 10).createFromHTML(formHtml).setOrigin(0, 0);
-        this.domElements.push(formDom);
+        formContainer.innerHTML = `
+            <span style="color: #94a3b8; font-size: 13px; font-weight: bold; white-space: nowrap;">🔗 URL:</span>
+            <input type="text" id="editor-yt-url-input" 
+                   value="https://www.youtube.com/watch?v=${this.chart ? this.chart.youtubeId : 'dQw4w9WgXcQ'}" 
+                   placeholder="https://www.youtube.com/watch?v=..." 
+                   style="width: 320px; padding: 5px 8px; background: #0f172a; color: #00ffff; border: 1px solid #334155; border-radius: 4px; font-size: 13px; outline: none;" />
+            <button id="editor-yt-load-btn" 
+                    style="padding: 5px 12px; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap;">
+                読み込む
+            </button>
+        `;
 
-        // イベントリスナーの登録（遅延実行で確実にDOMを取得）
-        setTimeout(() => {
-            const loadBtn = document.getElementById('editor-yt-load-btn');
-            const urlInput = document.getElementById('editor-yt-url-input');
+        // game-container 内に追加
+        const gameContainer = document.getElementById('game-container') || document.body;
+        gameContainer.appendChild(formContainer);
 
-            if (loadBtn && urlInput) {
-                const handleLoad = () => {
-                    const inputVal = urlInput.value;
-                    const extractedId = this.extractYouTubeId ? this.extractYouTubeId(inputVal) : inputVal;
-                    if (extractedId) {
-                        if (this.chart) this.chart.youtubeId = extractedId;
-                        this.loadYouTubeVideo(extractedId);
-                    } else {
-                        alert('有効なYouTube URLを入力してください。');
-                    }
-                };
+        // イベントリスナーの登録
+        const loadBtn = document.getElementById('editor-yt-load-btn');
+        const urlInput = document.getElementById('editor-yt-url-input');
 
-                loadBtn.onclick = handleLoad;
-                urlInput.onkeypress = (e) => {
-                    if (e.key === 'Enter') handleLoad();
-                };
-            }
-        }, 150);
+        if (loadBtn && urlInput) {
+            const handleLoad = () => {
+                const inputVal = urlInput.value;
+                const extractedId = this.extractYouTubeId(inputVal);
+                if (extractedId) {
+                    if (this.chart) this.chart.youtubeId = extractedId;
+                    this.loadYouTubeVideo(extractedId);
+                } else {
+                    alert('有効なYouTube URLを入力してください。');
+                }
+            };
+
+            loadBtn.onclick = handleLoad;
+            urlInput.onkeypress = (e) => {
+                if (e.key === 'Enter') handleLoad();
+            };
+        }
 
         // 💾 保存ボタン
         const saveBtn = this.add.text(screenWidth - 100, 12, '💾 保存', {
@@ -296,14 +312,10 @@ export class EditorScene extends Phaser.Scene {
         return `${min}:${sec}.${milli}`;
     }
 
-    /**
-     * PhaserのScale.FIT倍率と画面位置に合わせてYouTube divを動的に正確配置する
-     */
     updateYouTubePosition() {
         const playerElem = document.getElementById('youtube-player');
         if (!playerElem) return;
 
-        // Phaserキャンバスの実際のスクリーン座標と縮小比率を取得
         const bounds = this.scale.canvasBounds;
         const scaleX = bounds.width / 1280;
         const scaleY = bounds.height / 720;
@@ -314,12 +326,12 @@ export class EditorScene extends Phaser.Scene {
         const realHeight = this.previewHeight * scaleY;
 
         playerElem.style.display = 'block';
-        playerElem.style.position = 'fixed'; // FIXED指定で確実にキャンバス上に載せる
+        playerElem.style.position = 'fixed';
         playerElem.style.left = `${realLeft}px`;
         playerElem.style.top = `${realTop}px`;
         playerElem.style.width = `${realWidth}px`;
         playerElem.style.height = `${realHeight}px`;
-        playerElem.style.zIndex = '500'; // キャンバスより前面に表示
+        playerElem.style.zIndex = '100'; // 🌟 z-indexを100に設定（URL入力フォームの99999より下にする）
         playerElem.style.pointerEvents = 'auto';
     }
 
