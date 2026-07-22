@@ -809,7 +809,10 @@ const config = {
     width: 1280,
     height: 720,
     transparent: true, 
-    parent: 'game-container',  
+    parent: 'game-container',
+    dom: {
+        createContainer: true // 🌟 HTML DOM Overlay を有効化
+    },
     scale: {
         mode: Phaser.Scale.FIT,           
         autoCenter: Phaser.Scale.CENTER_BOTH,
