@@ -60,18 +60,16 @@ export class EditorScene extends Phaser.Scene {
         return trimmed;
     }
 
-    /**
-     * 1. ヘッダーエリア（BACKボタンの右隣にURL入力欄を配置）
-     */
+    // 1. ヘッダーエリア（BACKボタンの右隣にURL入力欄を配置）
     createHeader(screenWidth) {
-        // 🔙 BACKボタン (x: 20, y: 15)
-        const backBtn = this.add.text(20, 15, '← BACK', {
+        // 🔙 BACKボタン (x: 20, y: 12)
+        const backBtn = this.add.text(20, 12, '← BACK', {
             fontSize: '15px',
             fontFamily: 'Arial',
             fontWeight: 'bold',
             fill: '#00ffff',
             backgroundColor: '#1e293b',
-            padding: { x: 10, y: 5 }
+            padding: { x: 10, y: 6 }
         }).setInteractive({ useHandCursor: true });
 
         backBtn.on('pointerdown', () => {
@@ -84,25 +82,26 @@ export class EditorScene extends Phaser.Scene {
             this.scene.start('HomeScene');
         });
 
-        // 🔍 BACKボタンの右側(x: 120, y: 12)に配置するHTML入力フォーム
+        // 🔗 BACKボタンの右側(x: 130, y: 10)に配置するHTML入力フォーム
         const formHtml = `
-            <div style="display: flex; align-items: center; gap: 8px; font-family: Arial, sans-serif; position: relative; z-index: 9999;">
+            <div style="display: flex; align-items: center; gap: 8px; font-family: Arial, sans-serif; pointer-events: auto;">
                 <span style="color: #94a3b8; font-size: 13px; font-weight: bold; white-space: nowrap;">🔗 URL:</span>
                 <input type="text" id="editor-yt-url-input" 
-                       value="https://www.youtube.com/watch?v=${this.chart.youtubeId}" 
+                       value="https://www.youtube.com/watch?v=${this.chart ? this.chart.youtubeId : ''}" 
                        placeholder="https://www.youtube.com/watch?v=..." 
-                       style="width: 380px; padding: 6px 10px; background: #0f172a; color: #00ffff; border: 1px solid #334155; border-radius: 4px; font-size: 13px; outline: none;" />
+                       style="width: 320px; padding: 5px 8px; background: #0f172a; color: #00ffff; border: 1px solid #334155; border-radius: 4px; font-size: 13px; outline: none;" />
                 <button id="editor-yt-load-btn" 
-                        style="padding: 6px 14px; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap;">
+                        style="padding: 5px 12px; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap;">
                     読み込む
                 </button>
             </div>
         `;
 
-        const formDom = this.add.dom(120, 12).createFromHTML(formHtml).setOrigin(0, 0);
+        // x: 130（BACKボタンの右）、y: 10（高さ位置）にセット
+        const formDom = this.add.dom(130, 10).createFromHTML(formHtml).setOrigin(0, 0);
         this.domElements.push(formDom);
 
-        // イベントリスナーの登録
+        // イベントリスナーの登録（遅延実行で確実にDOMを取得）
         setTimeout(() => {
             const loadBtn = document.getElementById('editor-yt-load-btn');
             const urlInput = document.getElementById('editor-yt-url-input');
@@ -110,9 +109,9 @@ export class EditorScene extends Phaser.Scene {
             if (loadBtn && urlInput) {
                 const handleLoad = () => {
                     const inputVal = urlInput.value;
-                    const extractedId = this.extractYouTubeId(inputVal);
+                    const extractedId = this.extractYouTubeId ? this.extractYouTubeId(inputVal) : inputVal;
                     if (extractedId) {
-                        this.chart.youtubeId = extractedId;
+                        if (this.chart) this.chart.youtubeId = extractedId;
                         this.loadYouTubeVideo(extractedId);
                     } else {
                         alert('有効なYouTube URLを入力してください。');
@@ -124,22 +123,24 @@ export class EditorScene extends Phaser.Scene {
                     if (e.key === 'Enter') handleLoad();
                 };
             }
-        }, 100);
+        }, 150);
 
         // 💾 保存ボタン
-        const saveBtn = this.add.text(screenWidth - 100, 15, '💾 保存', {
+        const saveBtn = this.add.text(screenWidth - 100, 12, '💾 保存', {
             fontSize: '15px',
             fontFamily: 'Arial',
             fontWeight: 'bold',
             fill: '#ffffff',
             backgroundColor: '#16a34a',
-            padding: { x: 14, y: 5 }
+            padding: { x: 14, y: 6 }
         }).setInteractive({ useHandCursor: true });
 
         saveBtn.on('pointerdown', () => {
-            console.log('--- 💾 譜面JSONデータ ---');
-            console.log(JSON.stringify(this.chart.toJSON(), null, 2));
-            alert('譜面データをコンソールに出力しました！');
+            if (this.chart) {
+                console.log('--- 💾 譜面JSONデータ ---');
+                console.log(JSON.stringify(this.chart.toJSON(), null, 2));
+            }
+            alert('譜面データを保存・出力しました！');
         });
     }
 
