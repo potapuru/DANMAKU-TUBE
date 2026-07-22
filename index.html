@@ -5,48 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DANMAKU-TUBE</title>
     <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background-color: #000;
-      }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #000;
+  }
 
-      #game-container {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-      }
+  #game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
 
-      /* 🌟 YouTubeプレイヤー（最背面: z-index: 1） */
-      #youtube-player {
-        position: absolute;
-        display: none;
-        z-index: 1;
-        pointer-events: auto;
-      }
+  /* 🌟 YouTubeプレイヤー（最背面: z-index: 1） */
+  #youtube-player {
+    position: absolute;
+    display: none;
+    z-index: 1;
+    pointer-events: auto;
+  }
 
-      /* 🌟 黒い透かしシート（真ん中: z-index: 2） */
-      #youtube-overlay {
-        position: absolute;
-        display: none;
-        z-index: 2;
-        background-color: rgba(0, 0, 0, 0.7); /* 70%の黒透明 */
-        pointer-events: none; /* マウス操作を通す */
-      }
+  /* 🌟 黒い透かしシート（真ん中: z-index: 2） */
+  #youtube-overlay {
+    position: absolute;
+    display: none;
+    z-index: 2;
+    background-color: rgba(0, 0, 0, 0.7); /* 70%の黒透明 */
+    pointer-events: none; /* シート自体はクリックを邪魔しない */
+  }
 
-      /* 🌟 ゲームキャンバス（最前面: z-index: 3） */
-      #game-container canvas {
-        position: absolute !important;
-        top: 0;
-        left: 0;
-        z-index: 3 !important;
-        pointer-events: none !important; /* 背景の透明部分を透過してYouTube操作等を可能にする */
-      }
-    </style>
+  /* 🌟 ゲームキャンバス（最前面: z-index: 3） */
+  #game-container canvas {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    z-index: 3 !important;
+    pointer-events: auto !important; /* 🌟【ここを修正】ゲーム操作（マウス・キーボード）を受け取る */
+  }
+</style>
   </head>
   <body style="margin: 0; padding: 0; background-color: #0f172a; overflow: hidden;">
 
