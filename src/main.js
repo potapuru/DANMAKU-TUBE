@@ -470,6 +470,26 @@ class GameScene extends Phaser.Scene {
     }
 
     create() {
+        // --- 🌟 黒いシート（オーバーレイ）の表示・位置合わせ設定を追加 ---
+        const overlay = document.getElementById('youtube-overlay');
+        if (overlay) {
+            overlay.style.display = 'block';
+            
+            // 画面サイズに合わせてオーバーレイのサイズを更新する関数
+            const updateOverlaySize = () => {
+                const container = document.getElementById('game-container');
+                if (container) {
+                    overlay.style.left = '0px';
+                    overlay.style.top = '0px';
+                    overlay.style.width = '100%';
+                    overlay.style.height = '100%';
+                }
+            };
+
+            updateOverlaySize();
+            // リサイズイベントにも対応
+            this.scale.on('resize', updateOverlaySize);
+        }
         playerHp = maxHp;
         isGameOver = false;
         hitCount = 0;
@@ -731,6 +751,25 @@ class GameScene extends Phaser.Scene {
                 }
                 return false;
             });
+        }
+    }
+    shutdown() {
+        // 🌟 ゲーム終了時に黒シートを非表示にする
+        const overlay = document.getElementById('youtube-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+
+        if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
+            try {
+                ytPlayer.stopVideo();
+            } catch (e) {
+                console.log(e);
+            }
+        }
+        const playerElem = document.getElementById('youtube-player');
+        if (playerElem) {
+            playerElem.style.display = 'none';
         }
     }
 }
