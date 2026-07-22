@@ -60,11 +60,11 @@ export class EditorScene extends Phaser.Scene {
         return trimmed;
     }
 
-    /**
+ /**
      * 1. ヘッダーエリア（BACKボタンの右隣にURL入力欄を配置）
      */
     createHeader(screenWidth) {
-        // 🔙 BACKボタン (x: 20, y: 12)
+        // 🔙 BACKボタン (x: 25, y: 15)
         const backBtn = this.add.text(25, 15, '← BACK', {
             fontSize: '15px',
             fontFamily: 'Arial',
@@ -84,40 +84,24 @@ export class EditorScene extends Phaser.Scene {
             this.scene.start('HomeScene');
         });
 
-        // 🌟 既存の入力バー要素があれば削除
-        const oldForm = document.getElementById('editor-yt-form-container');
-        if (oldForm) oldForm.remove();
-
-        // 🌟 HTML DOMを直接作成して最前面（z-index: 99999）に配置
-        const formContainer = document.createElement('div');
-        formContainer.id = 'editor-yt-form-container';
-        formContainer.style.cssText = `
-            position: absolute;
-            left: 120px;
-            top: 10px;
-            z-index: 99999;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: Arial, sans-serif;
-            pointer-events: auto;
+        // 🔗 BACKボタンの右側（x: 140, y: 15）にPhaserのDOM機能で配置（画面リサイズ時もボタンとズレない）
+        const formHtml = `
+            <div id="editor-yt-form-container" style="display: flex; align-items: center; gap: 8px; font-family: Arial, sans-serif; pointer-events: auto;">
+                <span style="color: #94a3b8; font-size: 13px; font-weight: bold; white-space: nowrap;">🔗 URL:</span>
+                <input type="text" id="editor-yt-url-input" 
+                       value="${this.chart && this.chart.youtubeId ? 'https://www.youtube.com/watch?v=' + this.chart.youtubeId : ''}" 
+                       placeholder="https://www.youtube.com/watch?v=..." 
+                       style="width: 320px; padding: 5px 8px; background: #0f172a; color: #00ffff; border: 1px solid #334155; border-radius: 4px; font-size: 13px; outline: none;" />
+                <button id="editor-yt-load-btn" 
+                        style="padding: 5px 12px; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap;">
+                    読み込む
+                </button>
+            </div>
         `;
 
-        formContainer.innerHTML = `
-            <span style="color: #94a3b8; font-size: 13px; font-weight: bold; white-space: nowrap;">🔗 URL:</span>
-            <input type="text" id="editor-yt-url-input" 
-                   value="https://www.youtube.com/watch?v=${this.chart ? this.chart.youtubeId : 'dQw4w9WgXcQ'}" 
-                   placeholder="https://www.youtube.com/watch?v=..." 
-                   style="width: 320px; padding: 5px 8px; background: #0f172a; color: #00ffff; border: 1px solid #334155; border-radius: 4px; font-size: 13px; outline: none;" />
-            <button id="editor-yt-load-btn" 
-                    style="padding: 5px 12px; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap;">
-                読み込む
-            </button>
-        `;
-
-        // game-container 内に追加
-        const gameContainer = document.getElementById('game-container') || document.body;
-        gameContainer.appendChild(formContainer);
+        // PhaserのDOM機能を使うことでBACKボタンの横（x: 140, y: 15）に連動固定
+        const formDom = this.add.dom(140, 15).createFromHTML(formHtml).setOrigin(0, 0);
+        this.domElements.push(formDom);
 
         // イベントリスナーの登録
         const loadBtn = document.getElementById('editor-yt-load-btn');
