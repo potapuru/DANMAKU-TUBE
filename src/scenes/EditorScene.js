@@ -102,30 +102,30 @@ export class EditorScene extends Phaser.Scene {
             z-index: 99999;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
             font-family: Arial, sans-serif;
             pointer-events: auto;
         `;
 
+        // 🌟 HTML構造の崩れを修正
         formContainer.innerHTML = `
-            <span style="color: #94a3b8; font-size: 13px; font-weight: bold; white-space: nowrap;">🔗 URL:</span>
-            <input type="text" id="editor-yt-url-input" 
-                   value="https://www.youtube.com/watch?v=${this.chart ? this.chart.youtubeId : 'dQw4w9WgXcQ'}" 
-                   placeholder="https://www.youtube.com/watch?v=..." 
-                   style="width: 320px; padding: 5px 8px; background: #0f172a; color: #00ffff; border: 1px solid #334155; border-radius: 4px; font-size: 13px; outline: none;" />
-            <button id="editor-yt-load-btn" 
-                    style="padding: 5px 12px; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap;">
-                読み込む
-            </button>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="color: #94a3b8; font-size: 13px; font-weight: bold; white-space: nowrap;">🔗 URL:</span>
+                <input type="text" id="editor-yt-url-input" 
+                       value="https://www.youtube.com/watch?v=${this.chart ? this.chart.youtubeId : 'dQw4w9WgXcQ'}" 
+                       placeholder="https://www.youtube.com/watch?v=..." 
+                       style="width: 320px; padding: 5px 8px; background: #0f172a; color: #00ffff; border: 1px solid #334155; border-radius: 4px; font-size: 13px; outline: none;" />
+                <button id="editor-yt-load-btn" 
+                        style="padding: 5px 12px; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap;">
+                    読み込む
+                </button>
             </div>
-
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    <span style="color: #94a3b8; font-size: 13px; font-weight: bold; white-space: nowrap;">🏷️ タイトル:</span>
-                    <input type="text" id="editor-title-input" 
-                           value="${this.chart && this.chart.title ? this.chart.title : ''}" 
-                           placeholder="曲名・譜面名を入力..." 
-                           style="width: 200px; padding: 5px 8px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px; font-size: 13px; outline: none;" />
-                </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="color: #94a3b8; font-size: 13px; font-weight: bold; white-space: nowrap;">🏷️ タイトル:</span>
+                <input type="text" id="editor-title-input" 
+                       value="${this.chart && this.chart.title ? this.chart.title : ''}" 
+                       placeholder="曲名・譜面名を入力..." 
+                       style="width: 200px; padding: 5px 8px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px; font-size: 13px; outline: none;" />
             </div>
         `;
 
@@ -250,7 +250,7 @@ export class EditorScene extends Phaser.Scene {
                     🚀 試射プレビュー (テスト発射)
                 </button>
             </div>
-            <div id="param-placeholder" style="color: #94a3b8; font-size: 13px; margin-top: 20px; line-spacing: 6px;">
+            <div id="param-placeholder" style="color: #94a3b8; font-size: 13px; margin-top: 20px; line-height: 1.6;">
                 タイムライン上のノードを選択すると<br>詳細パラメータを設定できます。
             </div>
         `;
@@ -276,7 +276,7 @@ export class EditorScene extends Phaser.Scene {
         }, 100);
     }
 
-/**
+    /**
      * 4. タイムラインエリアの実装
      */
     createTimelineArea(screenWidth, screenHeight) {
@@ -345,7 +345,7 @@ export class EditorScene extends Phaser.Scene {
         this.renderTimelineNodes();
     }
 
-/**
+    /**
      * タイムライン上のイベントノードを再描画する処理（ドラッグ＆ドロップ完全対応）
      */
     renderTimelineNodes() {
@@ -419,6 +419,7 @@ export class EditorScene extends Phaser.Scene {
             // 選択タップ時の処理
             nodeGroup.on('pointerdown', () => {
                 this.selectedEventId = event.id;
+                this.renderTimelineNodes();
                 this.updateParamPanelText(event);
             });
 
@@ -463,7 +464,7 @@ export class EditorScene extends Phaser.Scene {
         playerElem.style.top = `${realTop}px`;
         playerElem.style.width = `${realWidth}px`;
         playerElem.style.height = `${realHeight}px`;
-        playerElem.style.zIndex = '100'; // 🌟 z-indexを100に設定（URL入力フォームの99999より下にする）
+        playerElem.style.zIndex = '100'; // 🌟 z-indexを100に設定
         playerElem.style.pointerEvents = 'auto';
     }
 
@@ -494,7 +495,6 @@ export class EditorScene extends Phaser.Scene {
         const yt = window.ytPlayer || (window.YT && window.YT.Player ? window.ytPlayer : null);
 
         if (yt && typeof yt.cueVideoById === 'function') {
-            // 🌟 loadVideoById ではなく cueVideoById を使用して勝手な再生を防ぐ
             yt.cueVideoById({
                 videoId: youtubeId
             });
@@ -555,7 +555,7 @@ export class EditorScene extends Phaser.Scene {
         if (form) form.style.display = 'block';
         if (placeholder) placeholder.style.display = 'none';
 
-        // 値の反映
+        // 値の反映（未定義時のみデフォルト値を採用）
         const typeEl = document.getElementById('param-type');
         const speedEl = document.getElementById('param-speed');
         const countEl = document.getElementById('param-count');
@@ -563,10 +563,10 @@ export class EditorScene extends Phaser.Scene {
         const spreadEl = document.getElementById('param-spread');
 
         if (typeEl) typeEl.value = event.type || 'NORMAL';
-        if (speedEl) speedEl.value = event.speed || 200;
-        if (countEl) countEl.value = event.count || 5;
-        if (angleEl) angleEl.value = event.angle || 90;
-        if (spreadEl) spreadEl.value = event.spread || 60;
+        if (speedEl) speedEl.value = event.speed !== undefined ? event.speed : 200;
+        if (countEl) countEl.value = event.count !== undefined ? event.count : 5;
+        if (angleEl) angleEl.value = event.angle !== undefined ? event.angle : 90;
+        if (spreadEl) spreadEl.value = event.spread !== undefined ? event.spread : 60;
     }
 
     cleanupDomElements() {
@@ -625,6 +625,5 @@ export class EditorScene extends Phaser.Scene {
         if (!ev) return;
 
         console.log('🚀 試射実行:', ev);
-        // ※ 弾のプレビュー生成処理（PatternGenerator呼び出し等）をここに接続できます
     }
 }
