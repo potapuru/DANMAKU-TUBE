@@ -10,7 +10,7 @@ export class EditorScene extends Phaser.Scene {
     init(data) {
         this.chart = data && data.chart ? ChartModel.fromJSON(data.chart) : new ChartModel({
             title: '新規作成譜面',
-            youtubeId: 'dQw4w9WgXcQ'
+            youtubeId: ''
         });
         
         this.selectedEventId = null;
@@ -65,7 +65,7 @@ export class EditorScene extends Phaser.Scene {
      */
     createHeader(screenWidth) {
         // 🔙 BACKボタン (x: 20, y: 12)
-        const backBtn = this.add.text(20, 12, '← BACK', {
+        const backBtn = this.add.text(20, 18, '← BACK', {
             fontSize: '15px',
             fontFamily: 'Arial',
             fontWeight: 'bold',
