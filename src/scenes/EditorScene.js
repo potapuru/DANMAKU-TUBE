@@ -444,19 +444,19 @@ export class EditorScene extends Phaser.Scene {
         return `${min}:${sec}.${milli}`;
     }
 
-updateYouTubePosition() {
+    updateYouTubePosition() {
         const playerElem = document.getElementById('youtube-player');
         if (!playerElem) return;
 
-        // 🌟 黒いシート（オーバーレイ）要素の取得・自動生成
+        // 🌟 黒いシート（HTMLオーバーレイ）を取得、無ければ作成
         let overlayElem = document.getElementById('youtube-overlay');
         if (!overlayElem) {
             overlayElem = document.createElement('div');
             overlayElem.id = 'youtube-overlay';
             overlayElem.style.position = 'fixed';
-            overlayElem.style.backgroundColor = 'rgba(0, 0, 0, 0.65)'; // 🌟 黒シートの濃さ（0.65 = 65%黒）
-            overlayElem.style.pointerEvents = 'none'; // クリック操作を通す
-            overlayElem.style.zIndex = '101'; // YouTube (zIndex:100) の直上に配置
+            overlayElem.style.backgroundColor = 'rgba(15, 23, 42, 0.75)'; // 暗さ（75%のダークブルー/黒）
+            overlayElem.style.pointerEvents = 'none'; // クリック入力を動画側に通過させる
+            overlayElem.style.zIndex = '101'; // YouTube (100) の直上に重ねる
             document.body.appendChild(overlayElem);
         }
 
@@ -469,7 +469,7 @@ updateYouTubePosition() {
         const realWidth = this.previewWidth * scaleX;
         const realHeight = this.previewHeight * scaleY;
 
-        // YouTube プレイヤーの位置調整
+        // YouTube プレイヤーの位置設定
         playerElem.style.display = 'block';
         playerElem.style.position = 'fixed';
         playerElem.style.left = `${realLeft}px`;
@@ -479,7 +479,7 @@ updateYouTubePosition() {
         playerElem.style.zIndex = '100';
         playerElem.style.pointerEvents = 'auto';
 
-        // 🌟 黒シートをYouTubeと全く同じ位置・サイズに配置
+        // 🌟 黒いシートも全く同じサイズ・位置に重ねる
         overlayElem.style.display = 'block';
         overlayElem.style.left = `${realLeft}px`;
         overlayElem.style.top = `${realTop}px`;
@@ -590,17 +590,19 @@ updateYouTubePosition() {
     }
 
     cleanupDomElements() {
-        // 🌟 YouTube プレイヤーおよび黒シートの非表示・消去
+        // 🌟 YouTube プレイヤーの非表示＆削除
         const ytElem = document.getElementById('youtube-player');
         if (ytElem) {
             ytElem.style.display = 'none';
         }
 
+        // 🌟 黒いシートの完全削除
         const overlayElem = document.getElementById('youtube-overlay');
         if (overlayElem) {
-            overlayElem.style.display = 'none';
+            overlayElem.remove();
         }
 
+        // 動画停止
         if (window.ytPlayer && typeof window.ytPlayer.pauseVideo === 'function') {
             try {
                 window.ytPlayer.pauseVideo();
@@ -609,13 +611,13 @@ updateYouTubePosition() {
             }
         }
 
-        // 直接生成された HTML コンテナの削除
+        // 入力フォームの削除
         const formContainer = document.getElementById('editor-yt-form-container');
         if (formContainer) {
             formContainer.remove();
         }
 
-        // Phaser の DOM Overlay 要素の削除
+        // Phaser DOM Overlay の破棄
         if (this.domElements) {
             this.domElements.forEach(el => {
                 if (el && el.destroy) el.destroy();
