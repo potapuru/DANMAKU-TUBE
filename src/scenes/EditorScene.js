@@ -45,6 +45,10 @@ export class EditorScene extends Phaser.Scene {
 
         // 画面リサイズ時にもYouTubeの位置を追従させる
         this.scale.on('resize', () => this.updateYouTubePosition());
+
+        // 🌟 他の画面に遷移した時（シーン停止時）に確実に入力バーを消去する
+        this.events.once('shutdown', () => this.cleanupDomElements());
+        this.events.once('destroy', () => this.cleanupDomElements());
     }
 
     /**
@@ -357,6 +361,9 @@ export class EditorScene extends Phaser.Scene {
     setupYouTubePlayer() {
         this.updateYouTubePosition();
         this.loadYouTubeVideo(this.chart.youtubeId);
+        // 🌟 シーンが終了（他の画面へ遷移）した際に自動でHTML入力欄を消去する
+        this.events.once('shutdown', () => this.cleanupDomElements());
+        this.events.once('destroy', () => this.cleanupDomElements());
     }
 
     /**
@@ -437,10 +444,19 @@ export class EditorScene extends Phaser.Scene {
     }
 
     cleanupDomElements() {
-        this.domElements.forEach(el => {
-            if (el && el.destroy) el.destroy();
-        });
-        this.domElements = [];
+        // 直接生成された HTML コンテナの削除
+        const formContainer = document.getElementById('editor-yt-form-container');
+        if (formContainer) {
+            formContainer.remove();
+        }
+
+        // Phaser の DOM Overlay 要素の削除
+        if (this.domElements) {
+            this.domElements.forEach(el => {
+                if (el && el.destroy) el.destroy();
+            });
+            this.domElements = [];
+        }
     }
 
     update() {
