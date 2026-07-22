@@ -202,19 +202,78 @@ export class EditorScene extends Phaser.Scene {
         const panelWidth = screenWidth - panelX - 20;
         const panelHeight = 450;
 
+        // 背景描画
         const bg = this.add.graphics();
         bg.fillStyle(0x1e293b, 0.95);
         bg.fillRect(panelX, panelY, panelWidth, panelHeight);
         bg.lineStyle(2, 0x334155, 1);
         bg.strokeRect(panelX, panelY, panelWidth, panelHeight);
 
+        // タイトル
         this.add.text(panelX + 15, panelY + 15, '⚙️ 弾幕属性', {
             fontSize: '18px', fontWeight: 'bold', fill: '#00ffff'
         });
 
-        this.paramInfoText = this.add.text(panelX + 15, panelY + 50, 'タイムライン上のノードを\n選択すると詳細設定が表示されます', {
-            fontSize: '13px', fill: '#94a3b8', lineSpacing: 6
-        });
+        // パラメータ入力用 HTML フォームの埋め込み
+        const paramHtml = `
+            <div id="editor-param-form" style="width: 380px; color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; pointer-events: auto; display: none;">
+                <div style="margin-bottom: 10px;">
+                    <label style="color: #94a3b8; display: block; margin-bottom: 4px;">弾の種類:</label>
+                    <select id="param-type" style="width: 100%; padding: 5px; background: #0f172a; color: #00ffff; border: 1px solid #334155; border-radius: 4px;">
+                        <option value="NORMAL">通常弾 (NORMAL)</option>
+                        <option value="RING">リング弾 (RING)</option>
+                        <option value="WAY">WAY弾 (WAY)</option>
+                        <option value="SPIRAL">渦巻き弾 (SPIRAL)</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <label style="color: #94a3b8; display: block; margin-bottom: 4px;">速度:</label>
+                        <input type="number" id="param-speed" value="200" step="10" style="width: 90%; padding: 5px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px;" />
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="color: #94a3b8; display: block; margin-bottom: 4px;">弾数 (WAY/RING):</label>
+                        <input type="number" id="param-count" value="5" min="1" max="64" style="width: 90%; padding: 5px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px;" />
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label style="color: #94a3b8; display: block; margin-bottom: 4px;">発射角度 (°):</label>
+                        <input type="number" id="param-angle" value="90" step="5" style="width: 90%; padding: 5px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px;" />
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="color: #94a3b8; display: block; margin-bottom: 4px;">拡散角度 (°):</label>
+                        <input type="number" id="param-spread" value="60" step="5" style="width: 90%; padding: 5px; background: #0f172a; color: #ffffff; border: 1px solid #334155; border-radius: 4px;" />
+                    </div>
+                </div>
+                <button id="param-preview-btn" style="width: 100%; padding: 8px; background: #8b5cf6; color: #ffffff; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">
+                    🚀 試射プレビュー (テスト発射)
+                </button>
+            </div>
+            <div id="param-placeholder" style="color: #94a3b8; font-size: 13px; margin-top: 20px; line-spacing: 6px;">
+                タイムライン上のノードを選択すると<br>詳細パラメータを設定できます。
+            </div>
+        `;
+
+        const paramDom = this.add.dom(panelX + 15, panelY + 50).createFromHTML(paramHtml).setOrigin(0, 0);
+        this.domElements.push(paramDom);
+
+        // フォーム変更のリアルタイム検知イベント設定
+        setTimeout(() => {
+            const ids = ['param-type', 'param-speed', 'param-count', 'param-angle', 'param-spread'];
+            ids.forEach(id => {
+                const elem = document.getElementById(id);
+                if (elem) {
+                    elem.oninput = () => this.applyParamChanges();
+                    elem.onchange = () => this.applyParamChanges();
+                }
+            });
+
+            const testBtn = document.getElementById('param-preview-btn');
+            if (testBtn) {
+                testBtn.onclick = () => this.triggerPreviewShot();
+            }
+        }, 100);
     }
 
 /**
@@ -484,13 +543,30 @@ export class EditorScene extends Phaser.Scene {
     }
 
     updateParamPanelText(event) {
-        const typeInfo = BulletRegistry.getInfo(event.type);
-        this.paramInfoText.setText(
-            `【選択中の弾幕】\n` +
-            `ID: ${event.id}\n` +
-            `種類: ${typeInfo.name}\n` +
-            `発射時間: ${this.formatTime(event.time)}`
-        );
+        const form = document.getElementById('editor-param-form');
+        const placeholder = document.getElementById('param-placeholder');
+
+        if (!event) {
+            if (form) form.style.display = 'none';
+            if (placeholder) placeholder.style.display = 'block';
+            return;
+        }
+
+        if (form) form.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+
+        // 値の反映
+        const typeEl = document.getElementById('param-type');
+        const speedEl = document.getElementById('param-speed');
+        const countEl = document.getElementById('param-count');
+        const angleEl = document.getElementById('param-angle');
+        const spreadEl = document.getElementById('param-spread');
+
+        if (typeEl) typeEl.value = event.type || 'NORMAL';
+        if (speedEl) speedEl.value = event.speed || 200;
+        if (countEl) countEl.value = event.count || 5;
+        if (angleEl) angleEl.value = event.angle || 90;
+        if (spreadEl) spreadEl.value = event.spread || 60;
     }
 
     cleanupDomElements() {
@@ -520,5 +596,35 @@ export class EditorScene extends Phaser.Scene {
             this.updatePlayhead();
             this.timeDisplay.setText(`${this.formatTime(this.currentTimeMs)} / ${this.formatTime(this.totalDurationMs)}`);
         }
+    }
+
+    applyParamChanges() {
+        if (!this.selectedEventId || !this.chart) return;
+
+        const typeEl = document.getElementById('param-type');
+        const speedEl = document.getElementById('param-speed');
+        const countEl = document.getElementById('param-count');
+        const angleEl = document.getElementById('param-angle');
+        const spreadEl = document.getElementById('param-spread');
+
+        const updatedParams = {
+            type: typeEl ? typeEl.value : 'NORMAL',
+            speed: speedEl ? parseFloat(speedEl.value) : 200,
+            count: countEl ? parseInt(countEl.value, 10) : 5,
+            angle: angleEl ? parseFloat(angleEl.value) : 90,
+            spread: spreadEl ? parseFloat(spreadEl.value) : 60
+        };
+
+        // データモデルの更新
+        this.chart.updateEvent(this.selectedEventId, updatedParams);
+    }
+
+    triggerPreviewShot() {
+        if (!this.selectedEventId || !this.chart) return;
+        const ev = this.chart.attackPattern.find(e => e.id === this.selectedEventId);
+        if (!ev) return;
+
+        console.log('🚀 試射実行:', ev);
+        // ※ 弾のプレビュー生成処理（PatternGenerator呼び出し等）をここに接続できます
     }
 }
