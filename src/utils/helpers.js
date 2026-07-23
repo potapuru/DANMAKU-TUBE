@@ -1,9 +1,7 @@
 // src/utils/helpers.js
 import Phaser from 'phaser';
 
-// ----------------------------------------
-// 🌐 グローバルゲーム状態（変数・関数）
-// ----------------------------------------
+// 🌐 ゲーム共有状態
 export let playerHp = 10000;
 export const maxHp = 10000;
 export let isGameOver = false;
@@ -12,12 +10,16 @@ export let hitCount = 0;
 export let ytPlayer = null;
 export let currentSong = null;
 
-export let operationMode = 'mouse'; // 'mouse' または 'keyboard'
+export let operationMode = 'mouse'; // 'mouse' | 'keyboard'
 export let playerSpeed = 20;
 
-// Setter関数群
+// Setter関数
 export function setPlayerHp(value) {
-    playerHp = typeof value === 'function' ? value(playerHp) : value;
+    if (typeof value === 'function') {
+        playerHp = value(playerHp);
+    } else {
+        playerHp = value;
+    }
 }
 
 export function setIsGameOver(value) {
@@ -25,7 +27,11 @@ export function setIsGameOver(value) {
 }
 
 export function setHitCount(value) {
-    hitCount = typeof value === 'function' ? value(hitCount) : value;
+    if (typeof value === 'function') {
+        hitCount = value(hitCount);
+    } else {
+        hitCount = value;
+    }
 }
 
 export function setYtPlayer(player) {
@@ -44,7 +50,7 @@ export function setPlayerSpeed(speed) {
     playerSpeed = speed;
 }
 
-// 💡 動画時間をミリ秒で取得する関数
+// 動画時間取得
 export function getYoutubeCurrentTimeMS() {
     if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
         return ytPlayer.getCurrentTime() * 1000;
@@ -52,8 +58,8 @@ export function getYoutubeCurrentTimeMS() {
     return 0;
 }
 
-// 🌟 ネオン系背景粒子を生成する共通ヘルパー関数
-export function createCyberBackground(scene, width, height, count = 70) {
+// 🌟 サイバー背景
+export function createCyberBackground(scene, width, height, count = 45) {
     const colors = [0x00ffff, 0xff00ff, 0xffff00, 0x3b82f6];
 
     for (let i = 0; i < count; i++) {

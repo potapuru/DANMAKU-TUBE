@@ -1,5 +1,7 @@
+// src/scenes/select/SelectUI.js
+import Phaser from 'phaser';
 import { songList } from '../../songs/index.js';
-import { setCurrentSong } from '../../utils/helpers.js'; // currentSong更新用関数
+import { setCurrentSong } from '../../utils/helpers.js';
 
 export class SelectUI {
     constructor(scene) {
@@ -16,7 +18,6 @@ export class SelectUI {
         this.createSongList(screenWidth, screenHeight);
     }
 
-    // 🔙 戻るボタン
     createBackButton() {
         const backButton = this.scene.add.text(50, 40, '← BACK', {
             fontSize: '20px',
@@ -34,7 +35,6 @@ export class SelectUI {
         });
     }
 
-    // 🎵 タイトル
     createTitle(centerX) {
         this.scene.add.text(centerX, 50, 'SELECT MUSIC', {
             fontSize: '36px',
@@ -46,7 +46,6 @@ export class SelectUI {
         }).setOrigin(0.5);
     }
 
-    // 🎴 楽曲カードリスト & スクロール機能
     createSongList(screenWidth, screenHeight) {
         const scrollContainer = this.scene.add.container(0, 0);
 
@@ -71,7 +70,6 @@ export class SelectUI {
             const cardContainer = this.scene.add.container(x, y);
             scrollContainer.add(cardContainer);
 
-            // カード背景
             const bgGlow = this.scene.add.graphics();
             bgGlow.fillStyle(0x0f172a, 0.85);
             bgGlow.lineStyle(2, 0x334155, 1);
@@ -79,7 +77,6 @@ export class SelectUI {
             bgGlow.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
             cardContainer.add(bgGlow);
 
-            // サムネイル画像
             if (song.youtubeId) {
                 const thumbKey = `thumb_${song.youtubeId}`;
                 if (this.scene.textures.exists(thumbKey)) {
@@ -89,7 +86,6 @@ export class SelectUI {
                 }
             }
 
-            // 曲情報テキスト
             const textX = -cardWidth / 2 + 150;
             const titleText = this.scene.add.text(textX, -30, song.title, {
                 fontSize: '18px',
@@ -111,7 +107,6 @@ export class SelectUI {
 
             cardContainer.add([titleText, artistText, diffText]);
 
-            // インタラクション (ホバー・クリック)
             const hitArea = new Phaser.Geom.Rectangle(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
             cardContainer.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
 
@@ -121,14 +116,6 @@ export class SelectUI {
                 bgGlow.lineStyle(2, 0x00ffff, 1);
                 bgGlow.strokeRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
                 bgGlow.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
-
-                this.scene.tweens.add({
-                    targets: cardContainer,
-                    scaleX: 1.05,
-                    scaleY: 1.05,
-                    duration: 150,
-                    ease: 'Power2'
-                });
             });
 
             cardContainer.on('pointerout', () => {
@@ -137,23 +124,15 @@ export class SelectUI {
                 bgGlow.lineStyle(2, 0x334155, 1);
                 bgGlow.strokeRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
                 bgGlow.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
-
-                this.scene.tweens.add({
-                    targets: cardContainer,
-                    scaleX: 1.0,
-                    scaleY: 1.0,
-                    duration: 150,
-                    ease: 'Power2'
-                });
             });
 
+            // 🌟 曲選択＆画面遷移（ここでフリーズしないよう確実に値をセット）
             cardContainer.on('pointerdown', () => {
                 setCurrentSong(song);
                 this.scene.scene.start('GameScene');
             });
         });
 
-        // スクロール計算
         const totalRows = Math.ceil(songList.length / columns);
         const totalContentHeight = startY + (totalRows * (cardHeight + gapY)) - gapY + 20;
         const maxScroll = Math.max(0, totalContentHeight - viewHeight);

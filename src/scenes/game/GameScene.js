@@ -1,3 +1,4 @@
+// src/scenes/game/GameScene.js
 import Phaser from 'phaser';
 import { PatternGenerator } from '../../bullets/PatternGenerator.js';
 import { bossList } from '../../bosses/index.js';
@@ -24,14 +25,12 @@ export default class GameScene extends Phaser.Scene {
     }
 
     create() {
-        // 1. ビジュアルとUIのセットアップ
         this.visuals = new GameVisuals(this);
         this.visuals.setupOverlay();
 
         this.ui = new GameUI(this);
         this.ui.createHpBar();
 
-        // 2. ステート初期化
         setPlayerHp(maxHp);
         setIsGameOver(false);
         setHitCount(0);
@@ -40,11 +39,11 @@ export default class GameScene extends Phaser.Scene {
         const centerX = this.cameras.main.width / 2;
         const centerY = this.cameras.main.height / 2;
 
-        // 3. プレイヤー自機の生成
         this.player = this.add.circle(centerX, centerY + 200, 8, 0x00ffff);
         this.player.setDepth(10);
 
-        if (operationMode === 'keyboard') {
+        // 🌟 フリーズ防止：キーボード設定の安全な生成
+        if (operationMode === 'keyboard' && this.input.keyboard) {
             this.keys = this.input.keyboard.addKeys({
                 up: Phaser.Input.Keyboard.KeyCodes.W,
                 down: Phaser.Input.Keyboard.KeyCodes.S,
@@ -53,28 +52,35 @@ export default class GameScene extends Phaser.Scene {
             });
         }
 
-        // 4. 弾幕パターンジェネレーターの初期化
         const boss = bossList[0];
         if (boss && boss.patterns) {
             this.patternGenerator = new PatternGenerator(this, boss.patterns);
         }
 
-        // 5. YouTube動画ロード & 開始クリックプロンプト
         this.setupYouTubeAndStart();
     }
 
     setupYouTubeAndStart() {
+        // 🌟 フリーズ防止：YouTubeプレイヤーが準備できているか安全にチェック
         if (currentSong && currentSong.youtubeId && ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-            ytPlayer.loadVideoById({
-                videoId: currentSong.youtubeId,
-                startSeconds: currentSong.startTime || 0
-            });
-            ytPlayer.pauseVideo();
+            try {
+                ytPlayer.loadVideoById({
+                    videoId: currentSong.youtubeId,
+                    startSeconds: currentSong.startTime || 0
+                });
+                ytPlayer.pauseVideo();
+            } catch (e) {
+                console.warn("YouTube API Player is not ready yet:", e);
+            }
         }
 
         this.ui.createStartPrompt(() => {
             if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
-                ytPlayer.playVideo();
+                try {
+                    ytPlayer.playVideo();
+                } catch (e) {
+                    console.warn(e);
+                }
             }
             this.isGameStarted = true;
         });
@@ -83,31 +89,30 @@ export default class GameScene extends Phaser.Scene {
     update() {
         if (isGameOver || !this.isGameStarted) return;
 
-        // 🕹️ プレイヤー移動操作
+        // 🕹️ プレイヤー移動操作（設定変更が安全に反映される）
         if (operationMode === 'mouse') {
             const pointer = this.input.activePointer;
-            this.player.x = Phaser.Math.Clamp(pointer.x, 10, this.cameras.main.width - 10);
-            this.player.y = Phaser.Math.Clamp(pointer.y, 10, this.cameras.main.height - 10);
+            if (pointer) {
+                this.player.x = Phaser.Math.Clamp(pointer.x, 10, this.cameras.main.width - 10);
+                this.player.y = Phaser.Math.Clamp(pointer.y, 10, this.cameras.main.height - 10);
+            }
         } else if (operationMode === 'keyboard' && this.keys) {
-            if (this.keys.left.isDown) this.player.x -= playerSpeed;
-            if (this.keys.right.isDown) this.player.x += playerSpeed;
-            if (this.keys.up.isDown) this.player.y -= playerSpeed;
-            if (this.keys.down.isDown) this.player.y += playerSpeed;
+            if (this.keys.left && this.keys.left.isDown) this.player.x -= playerSpeed;
+            if (this.keys.right && this.keys.right.isDown) this.player.x += playerSpeed;
+            if (this.keys.up && this.keys.up.isDown) this.player.y -= playerSpeed;
+            if (this.keys.down && this.keys.down.isDown) this.player.y += playerSpeed;
 
             this.player.x = Phaser.Math.Clamp(this.player.x, 10, this.cameras.main.width - 10);
             this.player.y = Phaser.Math.Clamp(this.player.y, 10, this.cameras.main.height - 10);
         }
 
-        // 💥 弾幕更新 & 動画時間同期
         const currentTime = getYoutubeCurrentTimeMS();
         if (this.patternGenerator) {
             this.patternGenerator.update(currentTime);
         }
 
-        // 🎯 弾とプレイヤーの当たり判定
         this.checkCollisions();
 
-        // ☠️ ゲームオーバー判定
         if (playerHp <= 0) {
             setIsGameOver(true);
             this.scene.start('ResultScene');
