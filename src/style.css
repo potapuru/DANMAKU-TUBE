@@ -1,62 +1,45 @@
-/* 画面全体の余計な隙間（マージン）をなくし、真っ黒にします */
+/* src/style.css */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
-  background-color: #111;
-  overflow: hidden; /* スクロールバーが出ないようにする */
+  background-color: #000;
+  overflow: hidden; /* スクロールバー非表示 */
 }
 
-/* ゲーム画面を入れる枠を、画面いっぱいに広げます */
+/* 🎮 ゲーム全体を囲むコンテナ */
 #game-container {
-  width: 100%;
-  height: 100%;
+  position: relative;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-box-sizing: border-box;
-}
-
-body {
   overflow: hidden;
-  background-color: #000; /* 背景を真っ黒に */
 }
 
-/* 📺 YouTubeプレイヤーを画面いっぱいに後ろに配置 */
+/* 📺 YouTubeプレイヤー（最背面: z-index 1） */
 #youtube-player {
   position: absolute;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 1; /* 後ろ側 */
-  pointer-events: none; /* ゲーム中にクリックを邪魔しないようにする */
+  z-index: 1;
+  pointer-events: none; /* ゲーム中の操作を妨げない */
 }
 
-/* 🎮 ゲーム画面を透明にして前面に配置 */
-#game-container {
-  position: absolute;
+/* 🎮 ゲームキャンバス（前面: z-index 2） */
+#game-container canvas {
+  position: absolute !important;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 2; /* 前側 */
-}
-
-/* 🕶️ MVの上に重ねる薄暗いフィルター */
-#video-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.6); /* 💡 0.4 を 0.6 などに大きくするともっと暗くなります */
-  z-index: 1; /* 動画のすぐ上 */
-  pointer-events: none;
+  z-index: 2;
 }

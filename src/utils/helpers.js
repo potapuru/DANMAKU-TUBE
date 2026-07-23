@@ -1,8 +1,40 @@
 // src/utils/helpers.js
 import Phaser from 'phaser';
 
-export let operationMode = 'mouse';
+// ----------------------------------------
+// 🌐 グローバルゲーム状態（変数・関数）
+// ----------------------------------------
+export let playerHp = 10000;
+export const maxHp = 10000;
+export let isGameOver = false;
+export let hitCount = 0;
+
+export let ytPlayer = null;
+export let currentSong = null;
+
+export let operationMode = 'mouse'; // 'mouse' または 'keyboard'
 export let playerSpeed = 20;
+
+// Setter関数群
+export function setPlayerHp(value) {
+    playerHp = typeof value === 'function' ? value(playerHp) : value;
+}
+
+export function setIsGameOver(value) {
+    isGameOver = value;
+}
+
+export function setHitCount(value) {
+    hitCount = typeof value === 'function' ? value(hitCount) : value;
+}
+
+export function setYtPlayer(player) {
+    ytPlayer = player;
+}
+
+export function setCurrentSong(song) {
+    currentSong = song;
+}
 
 export function setOperationMode(mode) {
     operationMode = mode;
@@ -12,13 +44,15 @@ export function setPlayerSpeed(speed) {
     playerSpeed = speed;
 }
 
-export function getYoutubeCurrentTimeMS(ytPlayer) {
+// 💡 動画時間をミリ秒で取得する関数
+export function getYoutubeCurrentTimeMS() {
     if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
         return ytPlayer.getCurrentTime() * 1000;
     }
     return 0;
 }
 
+// 🌟 ネオン系背景粒子を生成する共通ヘルパー関数
 export function createCyberBackground(scene, width, height, count = 70) {
     const colors = [0x00ffff, 0xff00ff, 0xffff00, 0x3b82f6];
 

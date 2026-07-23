@@ -1,37 +1,18 @@
+// src/main.js
 import Phaser from 'phaser';
-import { PatternGenerator } from './bullets/PatternGenerator.js';
 import './style.css';
-import { bossList } from './bosses/index.js';
-import { songList } from './songs/index.js';
-import HomeScene from './scenes/HomeScene.js';
-import SelectScene from './scenes/SelectScene.js';
-import SettingScene from './scenes/SettingScene.js';
-import GameScene from './scenes/GameScene.js';
-import ResultScene from './scenes/ResultScene.js';
 
-let player;
-let keys;
-let playerHp = 10000;
-const maxHp = 10000;
-let hpBarGraphics;
-let isGameOver = false;
+// フォルダごとに分割したシーンのインポート
+import HomeScene from './scenes/home/HomeScene.js';
+import SelectScene from './scenes/select/SelectScene.js';
+import SettingScene from './scenes/setting/SettingScene.js';
+import GameScene from './scenes/game/GameScene.js';
+import ResultScene from './scenes/result/ResultScene.js';
 
-let hitCount = 0; 
-let ytPlayer = null;
-let currentSong = null; 
-export let operationMode = 'mouse';
-export let playerSpeed = 20; // プレイヤーの移動速度
-
-// 💡 動画時間を取得するための関数
-export function getYoutubeCurrentTimeMS() {
-    if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
-        return ytPlayer.getCurrentTime() * 1000;
-    }
-    return 0;
-}
+import { setYtPlayer } from './utils/helpers.js';
 
 // ==========================================
-// ⚙️ 5. 全体の設定
+// ⚙️ Phaser ゲーム設定
 // ==========================================
 const config = {
     type: Phaser.AUTO,
@@ -40,7 +21,7 @@ const config = {
     transparent: true, 
     parent: 'game-container',
     dom: {
-        createContainer: true // 🌟 HTML DOM Overlay を有効化
+        createContainer: true
     },
     scale: {
         mode: Phaser.Scale.FIT,           
@@ -50,11 +31,35 @@ const config = {
     scene: [HomeScene, SelectScene, SettingScene, GameScene, ResultScene]
 };
 
+// ==========================================
+// 📺 YouTube Iframe API の読み込み & 起動
+// ==========================================
 const tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
 const firstScriptTag = document.getElementsByTagName('script')[0];
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
 window.onYouTubeIframeAPIReady = () => {
-    const game = new Phaser.Game(config);
+    const player = new YT.Player('youtube-player', {
+        height: '100%',
+        width: '100%',
+        videoId: '', 
+        playerVars: {
+            'autoplay': 0,
+            'controls': 0,
+            'disablekb': 1,
+            'fs': 0,
+            'modestbranding': 1,
+            'rel': 0,
+            'showinfo': 0
+        },
+        events: {
+            'onReady': (event) => {
+                setYtPlayer(event.target);
+            }
+        }
+    });
+
+    // Phaser ゲームインスタンス生成
+    new Phaser.Game(config);
 };
