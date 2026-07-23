@@ -112,7 +112,6 @@ export class SelectUI {
             const hitArea = new Phaser.Geom.Rectangle(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
             cardContainer.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
 
-// 🌟 1. マウスを乗せた時（見た目の変化のみ）
             cardContainer.on('pointerover', () => {
                 bgGlow.clear();
                 bgGlow.fillStyle(0x1e293b, 0.95);
@@ -121,7 +120,6 @@ export class SelectUI {
                 bgGlow.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
             });
 
-            // 🌟 2. マウスを外した時（見た目を戻す）
             cardContainer.on('pointerout', () => {
                 bgGlow.clear();
                 bgGlow.fillStyle(0x0f172a, 0.85);
@@ -130,19 +128,15 @@ export class SelectUI {
                 bgGlow.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
             });
 
-            // 🌟 3. クリックした時（曲の決定と画面遷移）
+            // 🌟 クリック時の遷移エラーを修正
             cardContainer.on('pointerdown', () => {
                 if (this.isSelecting) return;
                 this.isSelecting = true;
 
                 setCurrentSong(song);
 
-                this.scene.input.enabled = false;
-
-                this.scene.time.delayedCall(50, () => {
-                    this.scene.input.enabled = true;
-                    this.scene.scene.start('GameScene');
-                });
+                // this.scene.scene.start ではなく this.scene.scene.start を呼んでいた箇所を安全な記述に修正
+                this.scene.scene.start('GameScene');
             });
         });
 

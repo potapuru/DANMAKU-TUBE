@@ -42,7 +42,6 @@ export default class GameScene extends Phaser.Scene {
         this.player = this.add.circle(centerX, centerY + 200, 8, 0x00ffff);
         this.player.setDepth(10);
 
-        // 🌟 フリーズ防止：キーボード設定の安全な生成
         if (operationMode === 'keyboard' && this.input.keyboard) {
             this.keys = this.input.keyboard.addKeys({
                 up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -61,16 +60,18 @@ export default class GameScene extends Phaser.Scene {
     }
 
     setupYouTubeAndStart() {
-        // 🌟 フリーズ防止：YouTubeプレイヤーが準備できているか安全にチェック
+        // 🌟 YouTube動画ロード時の安全処理
         if (currentSong && currentSong.youtubeId && ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
             try {
                 ytPlayer.loadVideoById({
                     videoId: currentSong.youtubeId,
                     startSeconds: currentSong.startTime || 0
                 });
-                ytPlayer.pauseVideo();
+                if (typeof ytPlayer.pauseVideo === 'function') {
+                    ytPlayer.pauseVideo();
+                }
             } catch (e) {
-                console.warn("YouTube API Player is not ready yet:", e);
+                console.warn('YouTube Player is not ready yet:', e);
             }
         }
 
@@ -79,7 +80,7 @@ export default class GameScene extends Phaser.Scene {
                 try {
                     ytPlayer.playVideo();
                 } catch (e) {
-                    console.warn(e);
+                    console.warn('YouTube Play error:', e);
                 }
             }
             this.isGameStarted = true;
@@ -89,7 +90,6 @@ export default class GameScene extends Phaser.Scene {
     update() {
         if (isGameOver || !this.isGameStarted) return;
 
-        // 🕹️ プレイヤー移動操作（設定変更が安全に反映される）
         if (operationMode === 'mouse') {
             const pointer = this.input.activePointer;
             if (pointer) {
