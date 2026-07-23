@@ -3,6 +3,11 @@ import { PatternGenerator } from './bullets/PatternGenerator.js';
 import './style.css';
 import { bossList } from './bosses/index.js';
 import { songList } from './songs/index.js';
+import HomeScene from './scenes/HomeScene.js';
+import SelectScene from './scenes/SelectScene.js';
+import SettingScene from './scenes/SettingScene.js';
+import GameScene from './scenes/GameScene.js';
+import ResultScene from './scenes/ResultScene.js';
 
 let player;
 let keys;
