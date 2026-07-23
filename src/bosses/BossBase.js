@@ -7,7 +7,7 @@ import { BulletHoming } from '../bullets/BulletHoming.js';
 import { BulletWave } from '../bullets/BulletWave.js';
 import { BulletLaser } from '../bullets/BulletLaser.js';
 import { BulletCircle } from '../bullets/BulletCircle.js';
-import { getYoutubeCurrentTimeMS } from '../main.js';
+import { getYoutubeCurrentTimeMS } from '../utils/helpers.js';
 
 export class BossBase extends Phaser.GameObjects.Arc {
     constructor(scene, color = 0x8800ff) {
