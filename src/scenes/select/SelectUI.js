@@ -9,6 +9,8 @@ export class SelectUI {
     }
 
     create() {
+        this.isSelecting = false;
+
         const screenWidth = this.scene.cameras.main.width;
         const screenHeight = this.scene.cameras.main.height;
         const centerX = screenWidth / 2;
@@ -110,28 +112,16 @@ export class SelectUI {
             const hitArea = new Phaser.Geom.Rectangle(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
             cardContainer.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
 
+// 🌟 1. マウスを乗せた時（見た目の変化のみ）
             cardContainer.on('pointerover', () => {
                 bgGlow.clear();
                 bgGlow.fillStyle(0x1e293b, 0.95);
                 bgGlow.lineStyle(2, 0x00ffff, 1);
                 bgGlow.strokeRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
                 bgGlow.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
-                if (this.isSelecting) return;
-                this.isSelecting = true;
-
-                // 選択した曲を保持
-                setCurrentSong(song);
-
-                // 画面全体の操作を一時的に無効化（二重判定を防ぐ）
-                this.scene.input.enabled = false;
-
-                // わずかに遅延させてから安全にGameSceneへ遷移
-                this.scene.time.delayedCall(50, () => {
-                    this.scene.input.enabled = true;
-                    this.scene.scene.start('GameScene');
-                });
             });
 
+            // 🌟 2. マウスを外した時（見た目を戻す）
             cardContainer.on('pointerout', () => {
                 bgGlow.clear();
                 bgGlow.fillStyle(0x0f172a, 0.85);
@@ -140,10 +130,19 @@ export class SelectUI {
                 bgGlow.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
             });
 
-            // 🌟 曲選択＆画面遷移（ここでフリーズしないよう確実に値をセット）
+            // 🌟 3. クリックした時（曲の決定と画面遷移）
             cardContainer.on('pointerdown', () => {
+                if (this.isSelecting) return;
+                this.isSelecting = true;
+
                 setCurrentSong(song);
-                this.scene.scene.start('GameScene');
+
+                this.scene.input.enabled = false;
+
+                this.scene.time.delayedCall(50, () => {
+                    this.scene.input.enabled = true;
+                    this.scene.scene.start('GameScene');
+                });
             });
         });
 
