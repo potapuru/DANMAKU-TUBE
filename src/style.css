@@ -33,7 +33,9 @@ html, body {
   width: 100vw;
   height: 100vh;
   z-index: 1;
-  pointer-events: none; /* ゲーム中の操作を妨げない */
+  opacity: 0; /* 最初は透明 */
+  visibility: hidden;
+  transition: opacity 0.3s ease; /* スムーズなフェードイン */
 }
 
 /* 🎮 ゲームキャンバス（前面: z-index 2） */
@@ -42,4 +44,16 @@ html, body {
   top: 0;
   left: 0;
   z-index: 2;
+}
+
+#youtube-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: none;
+  pointer-events: none;
 }

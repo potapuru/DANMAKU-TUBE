@@ -116,6 +116,20 @@ export class SelectUI {
                 bgGlow.lineStyle(2, 0x00ffff, 1);
                 bgGlow.strokeRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
                 bgGlow.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
+                if (this.isSelecting) return;
+                this.isSelecting = true;
+
+                // 選択した曲を保持
+                setCurrentSong(song);
+
+                // 画面全体の操作を一時的に無効化（二重判定を防ぐ）
+                this.scene.input.enabled = false;
+
+                // わずかに遅延させてから安全にGameSceneへ遷移
+                this.scene.time.delayedCall(50, () => {
+                    this.scene.input.enabled = true;
+                    this.scene.scene.start('GameScene');
+                });
             });
 
             cardContainer.on('pointerout', () => {

@@ -1,3 +1,4 @@
+// src/scenes/game/GameVisuals.js
 import { ytPlayer } from '../../utils/helpers.js';
 
 export class GameVisuals {
@@ -5,36 +6,38 @@ export class GameVisuals {
         this.scene = scene;
     }
 
-    // 🌟 黒い透過シート（YouTube上のオーバーレイ）の配置と調整
+    // 🌟 YouTubeプレイヤーと黒シートの表示設定
     setupOverlay() {
         const overlay = document.getElementById('youtube-overlay');
         if (overlay) {
             overlay.style.display = 'block';
+            overlay.style.opacity = '1';
             
             const updateOverlaySize = () => {
-                const container = document.getElementById('game-container');
-                if (container) {
-                    overlay.style.left = '0px';
-                    overlay.style.top = '0px';
-                    overlay.style.width = '100%';
-                    overlay.style.height = '100%';
-                }
+                overlay.style.left = '0px';
+                overlay.style.top = '0px';
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
             };
 
             updateOverlaySize();
             this.scene.scale.on('resize', updateOverlaySize);
         }
 
+        // 🌟 display: block ではなく opacity / visibility で安全に表示
         const playerElement = document.getElementById('youtube-player');
         if (playerElement) {
-            playerElement.style.display = 'block'; 
+            playerElement.style.opacity = '1';
+            playerElement.style.visibility = 'visible';
+            playerElement.style.pointerEvents = 'auto';
         }
     }
 
-    // 🧹 ゲーム終了時のクリーンアップ処理（オーバーレイや動画の非表示）
+    // 🧹 ゲーム終了時のクリーンアップ処理（プレイヤーを破壊せずに透明化する）
     cleanup() {
         const overlay = document.getElementById('youtube-overlay');
         if (overlay) {
+            overlay.style.opacity = '0';
             overlay.style.display = 'none';
         }
 
@@ -45,9 +48,13 @@ export class GameVisuals {
                 console.log(e);
             }
         }
+
+        // 🌟 display: none にせず opacity: 0 で透明化（インスタンス破棄を防止）
         const playerElem = document.getElementById('youtube-player');
         if (playerElem) {
-            playerElem.style.display = 'none';
+            playerElem.style.opacity = '0';
+            playerElem.style.visibility = 'hidden';
+            playerElem.style.pointerEvents = 'none';
         }
     }
 }
