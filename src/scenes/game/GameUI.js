@@ -22,6 +22,7 @@ export class GameUI {
         const barWidth = 400;
         const barHeight = 20;
         const x = (this.scene.cameras.main.width - barWidth) / 2;
+        const screenHeight = this.scene.cameras.main.height;
         const y = screenHeight - 50;
 
         // 背景（黒）

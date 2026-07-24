@@ -24,7 +24,10 @@
   /* 🌟 YouTubeプレイヤー（最背面: z-index: 1） */
   #youtube-player {
     position: absolute;
-    display: none;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     z-index: 1;
     pointer-events: auto;
   }
@@ -32,10 +35,13 @@
   /* 🌟 黒い透かしシート（真ん中: z-index: 2） */
   #youtube-overlay {
     position: absolute;
-    display: none;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     z-index: 2;
-    background-color: rgba(0, 0, 0, 0.7); /* 70%の黒透明 */
-    pointer-events: none; /* シート自体はクリックを邪魔しない */
+    background-color: rgba(0, 0, 0, 0.35); /* 👈 0.35 に軽減して動画・弾幕を鮮明化 */
+    pointer-events: none;
   }
 
   /* 🌟 ゲームキャンバス（最前面: z-index: 3） */
