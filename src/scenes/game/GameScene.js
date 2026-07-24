@@ -91,6 +91,14 @@ export default class GameScene extends Phaser.Scene {
             if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
                 try {
                     ytPlayer.playVideo();
+                    setTimeout(() => {
+                        if (typeof ytPlayer.unloadModule === 'function') {
+                            try {
+                                ytPlayer.unloadModule('captions');
+                                ytPlayer.unloadModule('cc');
+                            } catch (err) {}
+                        }
+                    }, 100);
                 } catch (e) {
                     console.warn('YouTube Play error:', e);
                 }

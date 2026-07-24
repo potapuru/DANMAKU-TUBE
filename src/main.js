@@ -2,7 +2,6 @@
 import Phaser from 'phaser';
 import './style.css';
 
-// フォルダごとに分割したシーンのインポート
 import HomeScene from './scenes/home/HomeScene.js';
 import SelectScene from './scenes/select/SelectScene.js';
 import SettingScene from './scenes/setting/SettingScene.js';
@@ -11,9 +10,6 @@ import ResultScene from './scenes/result/ResultScene.js';
 
 import { setYtPlayer } from './utils/helpers.js';
 
-// ==========================================
-// ⚙️ Phaser ゲーム設定
-// ==========================================
 const config = {
     type: Phaser.AUTO,
     width: 1280,
@@ -31,9 +27,6 @@ const config = {
     scene: [HomeScene, SelectScene, SettingScene, GameScene, ResultScene]
 };
 
-// ==========================================
-// 📺 YouTube Iframe API の読み込み & 起動
-// ==========================================
 const tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
 const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -58,10 +51,22 @@ window.onYouTubeIframeAPIReady = () => {
         events: {
             'onReady': (event) => {
                 setYtPlayer(event.target);
+            },
+            // 🌟 再生状態が変化した時のイベント処理を追加
+            'onStateChange': (event) => {
+                // YT.PlayerState.PLAYING (値: 1) = 再生開始時
+                if (event.data === 1 || (window.YT && event.data === window.YT.PlayerState.PLAYING)) {
+                    try {
+                        // 再生が始まった瞬間に字幕モジュールを物理的に解除
+                        event.target.unloadModule('captions');
+                        event.target.unloadModule('cc');
+                    } catch (e) {
+                        console.warn('Captions unload failed:', e);
+                    }
+                }
             }
         }
     });
 
-    // Phaser ゲームインスタンス生成
     new Phaser.Game(config);
 };
