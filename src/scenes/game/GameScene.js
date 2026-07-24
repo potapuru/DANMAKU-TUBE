@@ -35,6 +35,7 @@ export default class GameScene extends Phaser.Scene {
         setIsGameOver(false);
         setHitCount(0);
         this.isGameStarted = false;
+        this.gameStartTime = 0; // 🌟 念のための予備タイマー用
 
         const centerX = this.cameras.main.width / 2;
         const centerY = this.cameras.main.height / 2;
@@ -51,9 +52,12 @@ export default class GameScene extends Phaser.Scene {
             });
         }
 
-        const boss = bossList[0];
+        const boss = bossList ? bossList[0] : null;
         if (boss && boss.patterns) {
             this.patternGenerator = new PatternGenerator(this, boss.patterns);
+            console.log("弾幕パターン読み込み成功:", boss.patterns);
+        } else {
+            console.warn("ボスの弾幕パターンが見つかりません。bossListを確認してください。");
         }
 
         this.setupYouTubeAndStart();
@@ -115,6 +119,7 @@ export default class GameScene extends Phaser.Scene {
                 }
             }
             this.isGameStarted = true;
+            this.gameStartTime = this.time.now; // 🌟 開始時刻を保持
         });
     }
     // 🌟 リザルト画面への安全な遷移処理
@@ -155,7 +160,13 @@ export default class GameScene extends Phaser.Scene {
             this.player.y = Phaser.Math.Clamp(this.player.y, 10, this.cameras.main.height - 10);
         }
 
-        const currentTime = getYoutubeCurrentTimeMS();
+        // 🌟 時間の取得（YouTube再生時間、取れない場合はゲーム内経過時間を使用）
+        let currentTime = getYoutubeCurrentTimeMS();
+        if (typeof currentTime !== 'number' || isNaN(currentTime) || currentTime <= 0) {
+            currentTime = time - this.gameStartTime;
+        }
+
+        // 🌟 弾幕の更新処理
         if (this.patternGenerator) {
             this.patternGenerator.update(currentTime);
         }
