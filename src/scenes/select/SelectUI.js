@@ -128,14 +128,22 @@ export class SelectUI {
                 bgGlow.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
             });
 
-            // 🌟 クリック時の遷移エラーを修正
+            // 🌟 クリック時の処理（フリーズ対策＋正しい遷移）
             cardContainer.on('pointerdown', () => {
+                // 【フリーズ対策1】連打・2重タップ防止
                 if (this.isSelecting) return;
                 this.isSelecting = true;
 
+                // 選択曲をセット
                 setCurrentSong(song);
 
-                this.scene.start('GameScene');
+                // 【フリーズ対策2】画面遷移（.scene.start を使用）
+                try {
+                    this.scene.scene.start('GameScene');
+                } catch (error) {
+                    console.error("GameScene遷移エラー:", error);
+                    this.isSelecting = false; // エラー時は復帰できるように解除
+                }
             });
         });
 

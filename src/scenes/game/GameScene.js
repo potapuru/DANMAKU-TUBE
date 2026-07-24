@@ -60,21 +60,27 @@ export default class GameScene extends Phaser.Scene {
     }
 
     setupYouTubeAndStart() {
-        // 🌟 YouTube動画ロード時の安全処理
-        if (currentSong && currentSong.youtubeId && ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-            try {
-                ytPlayer.loadVideoById({
-                    videoId: currentSong.youtubeId,
-                    startSeconds: currentSong.startTime || 0
-                });
-                if (typeof ytPlayer.pauseVideo === 'function') {
-                    ytPlayer.pauseVideo();
+        // 【フリーズ対策】YouTube APIの存在・準備状態を厳格にチェック
+        if (currentSong && currentSong.youtubeId) {
+            if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+                try {
+                    ytPlayer.loadVideoById({
+                        videoId: currentSong.youtubeId,
+                        startSeconds: currentSong.startTime || 0
+                    });
+                    if (typeof ytPlayer.pauseVideo === 'function') {
+                        ytPlayer.pauseVideo();
+                    }
+                } catch (e) {
+                    // YouTube側でエラーが発生してもゲームを停止（フリーズ）させない
+                    console.warn('YouTube Player load error (Proceeding anyway):', e);
                 }
-            } catch (e) {
-                console.warn('YouTube Player is not ready yet:', e);
+            } else {
+                console.warn('ytPlayer is not ready or not initialized.');
             }
         }
 
+        // スタートUIの表示（画面タップ/スペースキーで開始）
         this.ui.createStartPrompt(() => {
             if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
                 try {
