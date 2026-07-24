@@ -68,6 +68,12 @@ export default class GameScene extends Phaser.Scene {
                         videoId: currentSong.youtubeId,
                         startSeconds: currentSong.startTime || 0
                     });
+                    if (typeof ytPlayer.unloadModule === 'function') {
+                        try {
+                            ytPlayer.unloadModule('captions');
+                            ytPlayer.unloadModule('cc');
+                        } catch (err) {}
+                    }
                     if (typeof ytPlayer.pauseVideo === 'function') {
                         ytPlayer.pauseVideo();
                     }
