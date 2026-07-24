@@ -44,25 +44,51 @@ export class GameUI {
         this.hpBarGraphics.strokeRect(x, y, barWidth, barHeight);
     }
 
-    // 📢 カウントダウン・メッセージ表示の作成
+    // 📢 スタートプロンプト（クリックで消去）
     createStartPrompt(onClick) {
-        const centerX = this.scene.cameras.main.width / 2;
-        const centerY = this.scene.cameras.main.height / 2;
+        const screenWidth = this.scene.cameras.main.width;
+        const screenHeight = this.scene.cameras.main.height;
+        const centerX = screenWidth / 2;
+        const centerY = screenHeight / 2;
 
-        const startText = this.scene.add.text(centerX, centerY, 'クリックでゲーム開始！', {
+        // 🌟 画面全域をカバーする透明なクリックゾーンを作成
+        const fullScreenZone = this.scene.add.zone(centerX, centerY, screenWidth, screenHeight)
+            .setInteractive({ useHandCursor: true })
+            .setDepth(200);
+
+        const startText = this.scene.add.text(centerX, centerY, '画面をクリック / スペースキーで開始', {
             fontSize: '32px',
             fontFamily: 'Arial',
             fontWeight: 'bold',
-            fill: '#00ffff',
-            backgroundColor: '#0f172a',
-            padding: { x: 20, y: 10 }
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(101);
+            fill: '#ffffff',
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: { x: 30, y: 15 }
+        }).setOrigin(0.5).setDepth(201);
 
-        startText.once('pointerdown', () => {
-            startText.destroy();
-            onClick();
+        // 点滅表示アニメーション
+        const tween = this.scene.tweens.add({
+            targets: startText,
+            alpha: 0.3,
+            duration: 600,
+            yoyo: true,
+            repeat: -1
         });
 
-        return startText;
+        // 開始処理（1度だけ実行）
+        const handleStart = () => {
+            fullScreenZone.destroy();
+            startText.destroy();
+            tween.stop();
+
+            if (typeof onClick === 'function') {
+                onClick();
+            }
+        };
+
+        fullScreenZone.once('pointerdown', handleStart);
+
+        if (this.scene.input && this.scene.input.keyboard) {
+            this.scene.input.keyboard.once('keydown-SPACE', handleStart);
+        }
     }
 }

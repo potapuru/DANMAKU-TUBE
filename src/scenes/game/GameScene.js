@@ -36,6 +36,7 @@ export default class GameScene extends Phaser.Scene {
         setHitCount(0);
         this.isGameStarted = false;
         this.gameStartTime = 0; // 🌟 念のための予備タイマー用
+        this.bullets = []; // 🌟 弾幕格納配列を初期化
 
         const centerX = this.cameras.main.width / 2;
         const centerY = this.cameras.main.height / 2;
@@ -51,13 +52,13 @@ export default class GameScene extends Phaser.Scene {
                 right: Phaser.Input.Keyboard.KeyCodes.D
             });
         }
-
-        const boss = bossList ? bossList[0] : null;
-        if (boss && boss.patterns) {
-            this.patternGenerator = new PatternGenerator(this, boss.patterns);
-            console.log("弾幕パターン読み込み成功:", boss.patterns);
-        } else {
-            console.warn("ボスの弾幕パターンが見つかりません。bossListを確認してください。");
+        // ボス＆弾幕パターンの初期化
+        const bossData = bossList ? bossList[0] : null;
+        if (bossData) {
+            this.boss = new BossBase(this, 0x8800ff);
+            if (bossData.patterns) {
+                this.boss.setPattern(bossData.patterns);
+            }
         }
 
         this.setupYouTubeAndStart();
@@ -166,9 +167,9 @@ export default class GameScene extends Phaser.Scene {
             currentTime = time - this.gameStartTime;
         }
 
-        // 🌟 弾幕の更新処理
-        if (this.patternGenerator) {
-            this.patternGenerator.update(currentTime);
+        // 💣 2. ボス・弾幕生成・移動更新
+        if (this.boss) {
+            this.boss.update();
         }
 
         this.checkCollisions();
