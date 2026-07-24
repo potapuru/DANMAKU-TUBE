@@ -1,4 +1,5 @@
 import { playerHp, maxHp } from '../../utils/helpers.js';
+import Phaser from 'phaser';
 
 export class GameUI {
     constructor(scene) {

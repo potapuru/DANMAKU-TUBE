@@ -1,6 +1,5 @@
 // src/scenes/game/GameVisuals.js
 import { ytPlayer } from '../../utils/helpers.js';
-
 export class GameVisuals {
     constructor(scene) {
         this.scene = scene;
