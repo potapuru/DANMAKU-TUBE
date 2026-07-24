@@ -135,8 +135,7 @@ export class SelectUI {
 
                 setCurrentSong(song);
 
-                // this.scene.scene.start ではなく this.scene.scene.start を呼んでいた箇所を安全な記述に修正
-                this.scene.scene.start('GameScene');
+                this.scene.start('GameScene');
             });
         });
 
