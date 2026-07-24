@@ -85,6 +85,17 @@ export default class GameScene extends Phaser.Scene {
                 console.warn('ytPlayer is not ready or not initialized.');
             }
         }
+        // 🌟 動画終了（曲終了）を検知してリザルト画面へ遷移
+        this.checkEndedInterval = setInterval(() => {
+            if (this.isGameStarted && !isGameOver && ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+                try {
+                    // YT.PlayerState.ENDED (値: 0) = 動画終了
+                    if (ytPlayer.getPlayerState() === 0) {
+                        this.goToResultScene();
+                    }
+                } catch (e) {}
+            }
+        }, 500);
 
         // スタートUIの表示（画面タップ/スペースキーで開始）
         this.ui.createStartPrompt(() => {
@@ -106,7 +117,25 @@ export default class GameScene extends Phaser.Scene {
             this.isGameStarted = true;
         });
     }
+    // 🌟 リザルト画面への安全な遷移処理
+    goToResultScene() {
+        if (isGameOver) return; // 既に遷移中なら重複防止
+        setIsGameOver(true);
 
+        // タイマー解除
+        if (this.checkEndedInterval) {
+            clearInterval(this.checkEndedInterval);
+            this.checkEndedInterval = null;
+        }
+
+        // YouTube画面演出のクリーンアップ
+        if (this.visuals) {
+            this.visuals.cleanup();
+        }
+
+        // リザルト画面へ遷移
+        this.scene.start('ResultScene');
+    }
     update() {
         if (isGameOver || !this.isGameStarted) return;
 
@@ -134,8 +163,7 @@ export default class GameScene extends Phaser.Scene {
         this.checkCollisions();
 
         if (playerHp <= 0) {
-            setIsGameOver(true);
-            this.scene.start('ResultScene');
+            this.goToResultScene();
         }
     }
 
