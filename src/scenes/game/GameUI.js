@@ -22,7 +22,7 @@ export class GameUI {
         const barWidth = 400;
         const barHeight = 20;
         const x = (this.scene.cameras.main.width - barWidth) / 2;
-        const y = 30;
+        const y = screenHeight - 50;
 
         // 背景（黒）
         this.hpBarGraphics.fillStyle(0x000000, 0.6);
